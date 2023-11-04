@@ -1,0 +1,54 @@
+name: auto versioning for main branch
+on:
+  push:
+    tags-ignore: 
+      - '**'
+    branches:
+      - main
+jobs:
+  version-up-main:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_IT_VERSION: 14.14.0
+      BUMPER_VERSION: 3.0.1
+    steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.PRIVATE_KEY }}
+      - name: Check out codes
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ steps.generate_token.outputs.token }}
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '16'
+      - name: Set releaser settings
+        run: |
+          git config --global user.name ${{ vars.BUILDER_GITHUB_USER }}
+          git config --global user.email ${{ vars.BUILDER_GITHUB_EMAIL }}
+      # バージョン更新コミットは対象外
+      - name: Patch release
+        if: "!contains(toJSON(github.event.commits.*.message), '[automate_versioning] Release')"
+        run: |
+          echo 'UPDATE_ARGS=patch' >> $GITHUB_ENV
+      - name: Minor release
+        if: contains(toJSON(github.event.commits.*.message), '[[MINOR]]')
+        run: |
+          echo 'UPDATE_ARGS=minor' >> $GITHUB_ENV
+      - name: Major release
+        if: contains(toJSON(github.event.commits.*.message), '[[MAJOR]]')
+        run: |
+          echo 'UPDATE_ARGS=major' >> $GITHUB_ENV
+      - name: Release
+        if: "env.UPDATE_ARGS != ''"
+        run: |
+          npm i -g release-it@${RELEASE_IT_VERSION}
+          npm i -g @release-it/bumper@${BUMPER_VERSION}
+          release-it -- ${UPDATE_ARGS} --ci
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
