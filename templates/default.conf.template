@@ -11,11 +11,8 @@ server {
         return 400;
     }
     location / {
-        auth_request /auth/validate;                   # /auth/validate でログイン有無を確認
-        error_page 401 = @login;                       # 未ログインなら @login へ
-        expires -1;
-        proxy_set_header HTTP_REMOTEUSER $user_info;  # ヘッダーにユーザ情報を付加
-        proxy_pass ${DEFAULT_WEB_UPSTREAML_URL};                     # WEBサーバへ転送
+        include /etc/nginx/conflib/oidc-proxy.conf;
+        proxy_pass ${DEFAULT_WEB_UPSTREAML_URL};
     }
 
     include /etc/nginx/conflib/oidc-server.conf;

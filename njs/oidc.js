@@ -108,8 +108,16 @@ function postlogout(r) {
 }
 
 // バックエンドへ送るユーザ情報
-function user_info(r) {
-    return r.variables.cookie_MY_SESSION;
+function username(r) {
+    return jwt.decode(r.variables.cookie_MY_SESSION).payload.username;
 }
 
-export default {validate, login, logout, postlogin, postlogout, user_info}
+function groups(r) {
+    var groups = jwt.decode(r.variables.cookie_MY_SESSION).payload.groups;
+    if (groups) {
+        return groups.join(" ")
+    }
+    return ""
+}
+
+export default {validate, login, logout, postlogin, postlogout, username, groups}
