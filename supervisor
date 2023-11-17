@@ -1,0 +1,13 @@
+/var/log/supervisor/*log {
+    daily
+    rotate 10
+    missingok
+    notifempty
+    compress
+    sharedscripts
+    dateext                  
+    dateformat _%Y-%m-%d_%H  
+    postrotate
+        /bin/kill -SIGUSR2 $(cat /var/run/supervisord.pid 2>/dev/null) 2>/dev/null || true
+    endscript
+}

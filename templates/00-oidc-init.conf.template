@@ -1,2 +1,4 @@
+resolver ${NGINX_LOCAL_RESOLVERS};
+
 js_path "/etc/nginx/njs/";
 js_import oidc from oidc.js;

@@ -25,10 +25,6 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 イメージには /etc/nginx/templates/default.conf.template がインストールされており、起動時に envsubst で内部の環境変数を置換して /etc/nginx/conf.d/default.conf に展開する。
 
 ```
-resolver 127.0.0.11;                # Docker resolver
-
-include /etc/nginx/conflib/oidc-init.conf;
-
 server {
     http2 ${DEFAULT_HTTP2};
     listen 80 default;
