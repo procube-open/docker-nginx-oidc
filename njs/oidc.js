@@ -45,6 +45,11 @@ async function validate(r) {
     }
 }
 
+async function session(r) {
+    let session_data = r.variables.cookie_OIDC_SESSION;
+    r.return(200, jwt.decode(session_data).payload);
+}
+
 function login(r) {
     let referer = r.variables.uri;
     let params = qs.stringify({
