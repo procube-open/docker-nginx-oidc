@@ -2,6 +2,8 @@ import qs from "querystring";
 import jwt from "jwt.js";
 import userinfo from "userinfo.js";
 
+const scheme = (typeof process.env.OIDC_REDIRECT_SCHEME === 'undefined')? 'http': process.env.OIDC_REDIRECT_SCHEME;
+
 function validate_id_token(token, issuer, audience) {
     let payload = jwt.decode(token).payload;
     if( payload.iss != issuer ) throw new Error("invalid token");
@@ -49,7 +51,7 @@ async function session(r) {
 }
 
 function login(r) {
-    let postlogin_uri = r.variables.scheme + "://" + r.variables.host + "/auth/postlogin";
+    let postlogin_uri = scheme + "://" + r.variables.host + "/auth/postlogin";
     let referer = r.variables.uri;
     let params = qs.stringify({
         response_type : "code",
@@ -64,7 +66,7 @@ function login(r) {
 async function postlogin(r) {
     try {
         let referer = r.args.p;
-        let postlogin_uri = r.variables.scheme + "://" + r.variables.host + "/auth/postlogin";
+        let postlogin_uri = scheme + "://" + r.variables.host + "/auth/postlogin";
 
         let redirect_uri = postlogin_uri + "?" + qs.stringify({p: referer});
         let tokens = await get_token(r.args.code, redirect_uri);
@@ -87,7 +89,7 @@ async function postlogin(r) {
 }
 
 function logout(r) {
-    let postlogout_uri = r.variables.scheme + "://" + r.variables.host + "/auth/postlogout";
+    let postlogout_uri = scheme + "://" + r.variables.host + "/auth/postlogout";
     let params = qs.stringify({
         client_id : process.env.OIDC_CLIENT_ID,
         post_logout_redirect_uri : postlogout_uri,
