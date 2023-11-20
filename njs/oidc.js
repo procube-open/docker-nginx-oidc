@@ -49,7 +49,7 @@ async function session(r) {
 }
 
 function login(r) {
-    let postlogin_uri = r.variables.scheme + "//" + r.variables.host + "/auth/postlogin";
+    let postlogin_uri = r.variables.scheme + "://" + r.variables.host + "/auth/postlogin";
     let referer = r.variables.uri;
     let params = qs.stringify({
         response_type : "code",
@@ -64,7 +64,7 @@ function login(r) {
 async function postlogin(r) {
     try {
         let referer = r.args.p;
-        let postlogin_uri = r.variables.scheme + "//" + r.variables.host + "/auth/postlogin";
+        let postlogin_uri = r.variables.scheme + "://" + r.variables.host + "/auth/postlogin";
 
         let redirect_uri = postlogin_uri + "?" + qs.stringify({p: referer});
         let tokens = await get_token(r.args.code, redirect_uri);
@@ -87,7 +87,7 @@ async function postlogin(r) {
 }
 
 function logout(r) {
-    let postlogout_uri = r.variables.scheme + "//" + r.variables.host + "/auth/postlogout";
+    let postlogout_uri = r.variables.scheme + "://" + r.variables.host + "/auth/postlogout";
     let params = qs.stringify({
         client_id : process.env.OIDC_CLIENT_ID,
         post_logout_redirect_uri : postlogout_uri,
