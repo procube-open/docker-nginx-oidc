@@ -50,3 +50,15 @@ server {
 |DEFAULT_WEB_FQDN|デフォルトのFQDN|"localhost"|
 |DEFAULT_WEB_UPSTREAML_URL|デフォルトのアップストリームのURL|"http://backend"|
 |DEFAULT_HTTP2|"on"を指定すると h2c 通信を受信する。http1.0 を使用する場合は "off" を指定する。|"off"|
+
+## セッションクッキー
+
+このプロキシはOP から取得したユーザ情報を JWT として署名し、セッションクッキー OIDC_SESSION にセットする。
+このとき、 /etc/nginx/njs/userinfo.js の convert 関数をカスタマイズすることでユーザ情報の値をカスタマイズできる。
+デフォルトの userinfo.js は以下の通りであり、何も変換しない。
+
+```javascript
+function convert(userinfo) {
+    return userinfo
+}
+```

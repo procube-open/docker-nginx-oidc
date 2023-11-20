@@ -1,8 +1,6 @@
 import qs from "querystring";
 import jwt from "jwt.js";
-
-const postlogin_uri = "http://localhost:80/auth/postlogin";
-const postlogout_uri = "http://localhost:80/auth/postlogout";
+import userinfo from "userinfo.js";
 
 function validate_id_token(token, issuer, audience) {
     let payload = jwt.decode(token).payload;
@@ -51,6 +49,7 @@ async function session(r) {
 }
 
 function login(r) {
+    let postlogin_uri = r.variables.schema + "//" + r.variables.host + "/auth/postlogin";
     let referer = r.variables.uri;
     let params = qs.stringify({
         response_type : "code",
@@ -65,6 +64,7 @@ function login(r) {
 async function postlogin(r) {
     try {
         let referer = r.args.p;
+        let postlogin_uri = r.variables.schema + "//" + r.variables.host + "/auth/postlogin";
 
         let redirect_uri = postlogin_uri + "?" + qs.stringify({p: referer});
         let tokens = await get_token(r.args.code, redirect_uri);
@@ -74,7 +74,7 @@ async function postlogin(r) {
         let claims = await get_userinfo(tokens.access_token);
 
         let secret_key = process.env.JWT_GEN_KEY;
-        let session_data = await jwt.encode(claims, secret_key);
+        let session_data = await jwt.encode(userinfo.convert(claims), secret_key);
 
         r.headersOut["Set-Cookie"] = [
             "OIDC_SESSION=" + session_data + "; Path=/",
@@ -87,6 +87,7 @@ async function postlogin(r) {
 }
 
 function logout(r) {
+    let postlogout_uri = r.variables.schema + "//" + r.variables.host + "/auth/postlogout";
     let params = qs.stringify({
         client_id : process.env.OIDC_CLIENT_ID,
         post_logout_redirect_uri : postlogout_uri,
