@@ -1,3 +1,5 @@
 function convert(userinfo) {
-    return userinfo
+    return userinfo;
 }
+
+export default {convert};
