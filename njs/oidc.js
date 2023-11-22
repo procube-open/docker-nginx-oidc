@@ -100,6 +100,7 @@ function logout(r) {
 
 function postlogout(r) {
     r.headersOut['Set-Cookie'] = ["OIDC_SESSION=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"];
+    r.headersOut['Content-Type'] = 'text/html';
     r.internalRedirect("@bye");
 }
 
