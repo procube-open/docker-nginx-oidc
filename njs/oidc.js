@@ -4,13 +4,6 @@ import userinfo from "userinfo.js";
 
 const scheme = (typeof process.env.OIDC_REDIRECT_SCHEME === 'undefined')? 'http': process.env.OIDC_REDIRECT_SCHEME;
 
-function validate_id_token(token, issuer, audience) {
-    let payload = jwt.decode(token).payload;
-    if( payload.iss != issuer ) throw new Error("invalid token");
-    if( payload.aud != audience ) throw new Error("invalid token");
-    if( payload.exp < Math.floor(Date.now()/1000) ) throw new Error("invalid token");
-}
-
 async function get_token(code, redirect_uri) {
     let reply = await ngx.fetch(process.env.OIDC_TOKEN_ENDPOINT, {
         method: "POST",
@@ -36,7 +29,7 @@ async function get_userinfo(access_token) {
 
 async function validate(r) {
     let secret_key = process.env.JWT_GEN_KEY;
-    let session_data = r.variables.cookie_OIDC_SESSION;
+    let session_data = r.variables.cookie_MY_ACCESS_TOKEN;
     let valid = await jwt.verify(session_data, secret_key);
     if( valid ) {
         r.return(200);
@@ -46,8 +39,9 @@ async function validate(r) {
 }
 
 async function session(r) {
-    let session_data = r.variables.cookie_OIDC_SESSION;
-    r.return(200, jwt.decode(session_data).payload);
+    let session_data = r.variables.cookie_MY_ACCESS_TOKEN;
+    r.headersOut['Content-Type'] = 'text/html'
+    r.return(200, JSON.stringify(jwt.decode(session_data).payload));
 }
 
 function login(r) {
@@ -71,15 +65,16 @@ async function postlogin(r) {
         let redirect_uri = postlogin_uri + "?" + qs.stringify({p: referer});
         let tokens = await get_token(r.args.code, redirect_uri);
 
-        validate_id_token(tokens.id_token, process.env.OIDC_ISSUER, process.env.OIDC_CLIENT_ID);
-
-        let claims = await get_userinfo(tokens.access_token);
+        // let claims = await get_userinfo(tokens.access_token);
+        let claims = jwt.decode(tokens.access_token).payload;
 
         let secret_key = process.env.JWT_GEN_KEY;
-        let session_data = await jwt.encode(userinfo.convert(claims), secret_key);
+        let my_access_token = await jwt.encode(userinfo.convert(claims), secret_key);
 
         r.headersOut["Set-Cookie"] = [
-            "OIDC_SESSION=" + session_data + "; Path=/",
+            "OIDC_ACCESS_TOKEN=" + tokens.access_token + "; Path=/; Secure; HttpOnly",
+            "OIDC_SESSION=" + tokens.refresh_token + "; Path=/; Secure; HttpOnly",
+            "MY_ACCESS_TOKEN=" + my_access_token + "; Path=/; Secure; HttpOnly"
         ];
         r.return(302, referer);
     }  catch (e) {
@@ -99,9 +94,13 @@ function logout(r) {
 }
 
 function postlogout(r) {
-    r.headersOut['Set-Cookie'] = ["OIDC_SESSION=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"];
-    r.headersOut['Content-Type'] = 'text/html';
+    r.headersOut['Set-Cookie'] = [
+        "OIDC_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
+        "OIDC_SESSION=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
+        "MY_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
+    ];
+    r.headersOut['Content-Type'] = 'text/html'
     r.internalRedirect("@bye");
 }
 
-export default {validate, login, logout, postlogin, postlogout}
+export default {validate, login, logout, postlogin, postlogout, session}
