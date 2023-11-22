@@ -16,6 +16,7 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 |OIDC_CLIENT_ID| RP の登録名|"reverse-proxy" |
 |OIDC_CLIENT_SECRET| RP のクライアントシークレット|"Your Secrets(must be replaced)" |
 |OIDC_SCOPE| OpenID Connect のスコープ| "openid"|
+|OIDC_REDIRECT_SCHEME|OP から戻ってくる時のURLの scheme。デフォルトは 'http' なので、https にリダイレクトする必要がある場合は 'https' を指定する。|
 |JWT_GEN_KEY| JWT 署名鍵 | "Your Secrets(must be replaced)"|
 |NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE|ワーカプロセス数を自動的に調整する|"true"|
 |NGINX_ENTRYPOINT_LOCAL_RESOLVERS|/etc/resolv.confに指定されているIPアドレスを環境変数 NGINX_LOCAL_RESOLVERS に展開する|"true"|
@@ -50,3 +51,16 @@ server {
 |DEFAULT_WEB_FQDN|デフォルトのFQDN|"localhost"|
 |DEFAULT_WEB_UPSTREAML_URL|デフォルトのアップストリームのURL|"http://backend"|
 |DEFAULT_HTTP2|"on"を指定すると h2c 通信を受信する。http1.0 を使用する場合は "off" を指定する。|"off"|
+
+## セッションクッキー
+
+このプロキシはOP から取得したユーザ情報を JWT として署名し、セッションクッキー OIDC_SESSION にセットする。
+このとき、 /etc/nginx/njs/userinfo.js の convert 関数をカスタマイズすることでユーザ情報の値をカスタマイズできる。
+デフォルトの userinfo.js は以下の通りであり、何も変換しない。
+
+```javascript
+function convert(userinfo) {
+    return userinfo
+}
+```
+
