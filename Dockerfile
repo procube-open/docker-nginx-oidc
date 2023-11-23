@@ -21,5 +21,5 @@ COPY njs/ /etc/nginx/njs/
 COPY nginx.conf /etc/supervisor/conf.d/
 COPY templates/ /etc/nginx/templates/
 COPY docker-entrypoint.sh /
+RUN rm -f /var/log/nginx/*.log
 RUN chmod +x /docker-entrypoint.sh
-
