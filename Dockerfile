@@ -23,4 +23,3 @@ COPY templates/ /etc/nginx/templates/
 COPY docker-entrypoint.sh /
 RUN rm -f /var/log/nginx/*.log
 RUN chmod +x /docker-entrypoint.sh
-
