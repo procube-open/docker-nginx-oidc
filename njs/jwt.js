@@ -1,4 +1,3 @@
-// JWTデコード
 function decode(jot) {
     var parts = jot.split('.').slice(0,2)
         .map(v=>Buffer.from(v, 'base64url').toString())
@@ -6,7 +5,6 @@ function decode(jot) {
     return { headers:parts[0], payload: parts[1] };
 }
 
-// JWTエンコード
 async function encode(claims, key) {
     let header = { typ: "JWT",  alg: "HS256" };
 
@@ -23,7 +21,6 @@ async function encode(claims, key) {
     return s + '.' + Buffer.from(sign).toString('base64url');
 }
 
-// JWT署名検証
 async function verify(jot, key) {
     if( !jot ) return false;
 
