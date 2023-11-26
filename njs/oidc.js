@@ -25,15 +25,6 @@ async function get_token(code, redirect_uri) {
 }
 
 async function refresh_token(r) {
-    if (r.variables.request_method != 'GET') {
-        r.log("OIDC validate: request method is not GET: method=" + r.variables.redirect_method);
-        return 401;
-    }
-    if (regex_top_page_url_pattern && !regex_top_page_url_pattern.test(r.variables.request_uri)) {
-        r.log("OIDC validate: request uri does not match for OIDC_TOP_PAGE_URL_PATTERN:" + 
-          process.env.OIDC_TOP_PAGE_URL_PATTERN +" : " + r.variables.request_uri);
-        return 401;
-    }
     let session = r.variables.cookie_OIDC_SESSION;
     if (!session) {
         r.log("OIDC validate: cookie OIDC_SESSION is not found.");
@@ -69,6 +60,11 @@ async function refresh_token(r) {
         let my_access_token = await jwt.encode(new_claims, secret_key);
     
         r.headersOut["X-New-Access-Token"] = "MY_ACCESS_TOKEN=" + my_access_token + process.env.OIDC_COOKIE_OPTIONS    
+        if (tokens.refresh_token) {
+            let session_claims = jwt.decode(tokens.refresh_token).payload;
+            expires = new Date(session_claims.exp * 1000).toUTCString();
+            r.headersOut["X-New-Session-Token"] = "OIDC_SESSION=" + tokens.refresh_token + ";Expires=" + expires + process.env.OIDC_COOKIE_OPTIONS    
+        }
         r.log("OIDC validate: succeeded to refresh token: " + my_access_token);
     }  catch (e) {
         r.error("OIDC validate: fail to refresh token: " + e.stack);
@@ -81,26 +77,33 @@ async function validate(r) {
     try {
         // add_header cannot be ondemand, so always add Set-Cookie header but dummy is set when Set-Cookie is not required.
         r.headersOut["X-New-Access-Token"] = "MY_DUMMY_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"    
+        r.headersOut["X-New-Session-Token"] = "OIDC_DUMMY_SESSION=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"    
         let secret_key = process.env.JWT_GEN_KEY;
         let my_access_token = r.variables.cookie_MY_ACCESS_TOKEN;
-        if (! await jwt.verify(my_access_token, secret_key)) {
+        if (!my_access_token) {
+            r.log("OIDC validate: no access_token is found.");
+            let status = await refresh_token(r);
+            r.return(status);
+            return
+        }
+        if (await jwt.verify(my_access_token, secret_key)) {
             r.log("OIDC validate: token is invalid: " + my_access_token + " key:" + secret_key);
             r.return(401)
-        } else {
-            let claims = jwt.decode(my_access_token);
-            if( claims && claims.payload && claims.payload.exp ) {
-                if (claims.payload.exp < Math.floor(Date.now()/1000)) {
-                    r.log("OIDC validate: token is expired: " + JSON.stringify(claims.payload));
-                    let status = await refresh_token(r)
-                    r.return(status)
-                } else {
-                    r.return(200);
-                }
-            } else {
-                r.log("OIDC validate: fail to decode: " + my_access_token + " craims:" + JSON.stringify(claims));
-                r.return(401);
-            }    
+            return
         }
+        let claims = jwt.decode(my_access_token);
+        if( claims && claims.payload && claims.payload.exp ) {
+            if (claims.payload.exp < Math.floor(Date.now()/1000)) {
+                r.log("OIDC validate: token is expired: " + JSON.stringify(claims.payload));
+                let status = await refresh_token(r);
+                r.return(status);
+            } else {
+                r.return(200);
+            }
+        } else {
+            r.log("OIDC validate: fail to decode: " + my_access_token + " craims:" + JSON.stringify(claims));
+            r.return(401);
+        }    
     }  catch (e) {
         r.error("OIDC validate: fail to valicate process: " + e.stack);
         r.return(401);
@@ -114,6 +117,25 @@ async function session(r) {
 }
 
 function login(r) {
+    if (r.variables.request_method != 'GET') {
+        r.log("OIDC validate: request method is not GET: method=" + r.variables.request_method);
+        r.return(401);
+        return;
+    }
+    if (regex_top_page_url_pattern) {
+
+        if (regex_top_page_url_pattern.test(r.variables.request_uri)) {
+            r.log("OIDC login: request uri match for OIDC_TOP_PAGE_URL_PATTERN:" + 
+                process.env.OIDC_TOP_PAGE_URL_PATTERN +" : " + r.variables.request_uri);
+        } else {
+            r.log("OIDC login: request uri does not match for OIDC_TOP_PAGE_URL_PATTERN:" + 
+            process.env.OIDC_TOP_PAGE_URL_PATTERN +" : " + r.variables.request_uri);
+            r.return(401);
+            return;
+        }
+    } else {
+        r.log("OIDC login: OIDC_TOP_PAGE_URL_PATTERN environment variable is not set");
+    }
     let postlogin_uri = scheme + "://" + r.variables.host + "/auth/postlogin";
     let referer = r.variables.uri;
     let params = qs.stringify({
@@ -140,11 +162,12 @@ async function postlogin(r) {
         let secret_key = process.env.JWT_GEN_KEY;
         let my_access_token = await jwt.encode(claims, secret_key);
 
-        r.headersOut["Set-Cookie"] = [
-            "OIDC_ACCESS_TOKEN=" + tokens.access_token + process.env.OIDC_COOKIE_OPTIONS,
-            "OIDC_SESSION=" + tokens.refresh_token + process.env.OIDC_COOKIE_OPTIONS,
-            "MY_ACCESS_TOKEN=" + my_access_token + process.env.OIDC_COOKIE_OPTIONS
-        ];
+        r.headersOut["Set-Cookie"] = ["MY_ACCESS_TOKEN=" + my_access_token + process.env.OIDC_COOKIE_OPTIONS];
+        if (tokens.refresh_token) {
+            let session_claims = jwt.decode(tokens.refresh_token).payload;
+            expires = new Date(session_claims.exp * 1000).toUTCString();
+            r.headersOut["Set-Cookie"].push("OIDC_SESSION=" + tokens.refresh_token + ";Expires=" + expires + process.env.OIDC_COOKIE_OPTIONS)
+        }
         r.return(302, referer);
     }  catch (e) {
         r.error(e.stack);
@@ -164,7 +187,6 @@ function logout(r) {
 
 function postlogout(r) {
     r.headersOut['Set-Cookie'] = [
-        "OIDC_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
         "OIDC_SESSION=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
         "MY_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
     ];
