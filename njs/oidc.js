@@ -1,8 +1,13 @@
 import qs from "querystring";
 import jwt from "jwt.js";
-import userinfo from "userinfo.js";
 
 const scheme = (typeof process.env.OIDC_REDIRECT_SCHEME === 'undefined')? 'http': process.env.OIDC_REDIRECT_SCHEME;
+
+let regex_top_page_url_pattern = null;
+
+if (process.env.OIDC_TOP_PAGE_URL_PATTERN) {
+    regex_top_page_url_pattern = new RegExp(process.env.OIDC_TOP_PAGE_URL_PATTERN);
+}
 
 async function get_token(code, redirect_uri) {
     let reply = await ngx.fetch(process.env.OIDC_TOKEN_ENDPOINT, {
@@ -19,32 +24,116 @@ async function get_token(code, redirect_uri) {
     return await reply.json();
 }
 
-async function get_userinfo(access_token) {
-    let reply = await ngx.fetch(process.env.OIDC_USER_INFO_ENDPOINT, {
-        method: "GET",
-        headers: { "Authorization": "Bearer " + access_token },
-    });
-    return await reply.json();
+async function refresh_token(r) {
+    let session = r.variables.cookie_OIDC_SESSION;
+    if (!session) {
+        r.log("OIDC validate: cookie OIDC_SESSION is not found.");
+        return 401;
+    }
+
+    // cookie expire shoud be same as JWT exp, but client-side clock cannot be trusted
+    let claims = await jwt.decode(session);
+    if((!claims) || (!claims.payload) || (!claims.payload.exp)) {
+        r.error("OIDC validate: fail to decode JWT:" + session);
+        return 401;
+    }
+    if (claims.payload.exp < Math.floor(Date.now()/1000)) {
+        r.log("OIDC validate: refresh token is expired: " + JSON.stringify(claims.payload));
+        return 401;
+    }
+
+    try {
+        let reply = await ngx.fetch(process.env.OIDC_TOKEN_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: qs.stringify({
+                grant_type    : "refresh_token",
+                client_id     : process.env.OIDC_CLIENT_ID,
+                client_secret : process.env.OIDC_CLIENT_SECRET,
+                refresh_token : session
+            }),
+        });
+        let tokens = await reply.json();
+        let new_claims = jwt.decode(tokens.access_token).payload;
+
+        let secret_key = process.env.JWT_GEN_KEY;
+        let my_access_token = await jwt.encode(new_claims, secret_key);
+    
+        r.headersOut["X-New-Access-Token"] = `MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`    
+        if (tokens.refresh_token) {
+            let session_claims = jwt.decode(tokens.refresh_token).payload;
+            let expires = new Date(session_claims.exp * 1000).toUTCString();
+            r.headersOut["X-New-Session-Token"] = `OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`    
+        }
+        r.log(`OIDC validate: succeeded to refresh token: ${my_access_token}`);
+    }  catch (e) {
+        r.error(`OIDC validate: fail to refresh token: ${e.stack}`);
+        return 401
+    }
+    return 200;
 }
 
 async function validate(r) {
-    let secret_key = process.env.JWT_GEN_KEY;
-    let session_data = r.variables.cookie_MY_ACCESS_TOKEN;
-    let valid = await jwt.verify(session_data, secret_key);
-    if( valid ) {
-        r.return(200);
-    } else {
+    try {
+        // add_header cannot be ondemand, so always add Set-Cookie header but dummy is set when Set-Cookie is not required.
+        r.headersOut["X-New-Access-Token"] = "MY_DUMMY_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"    
+        r.headersOut["X-New-Session-Token"] = "OIDC_DUMMY_SESSION=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"    
+        let secret_key = process.env.JWT_GEN_KEY;
+        let my_access_token = r.variables.cookie_MY_ACCESS_TOKEN;
+        if (!my_access_token) {
+            r.log("OIDC validate: no access_token is found.");
+            let status = await refresh_token(r);
+            r.return(status);
+            return
+        }
+        if (!await jwt.verify(my_access_token, secret_key)) {
+            r.log("OIDC validate: token is invalid: " + my_access_token + " key:" + secret_key);
+            r.return(401)
+            return
+        }
+        let claims = jwt.decode(my_access_token);
+        if( claims && claims.payload && claims.payload.exp ) {
+            if (claims.payload.exp < Math.floor(Date.now()/1000)) {
+                r.log("OIDC validate: token is expired: " + JSON.stringify(claims.payload));
+                let status = await refresh_token(r);
+                r.return(status);
+            } else {
+                r.return(200);
+            }
+        } else {
+            r.log(`OIDC validate: fail to decode: ${my_access_token} craims:${JSON.stringify(claims)}`);
+            r.return(401);
+        }    
+    }  catch (e) {
+        r.error(`OIDC validate: fail to valicate process: ${e.stack}`);
         r.return(401);
     }
 }
 
 async function session(r) {
     let session_data = r.variables.cookie_MY_ACCESS_TOKEN;
-    r.headersOut['Content-Type'] = 'text/html'
+    r.headersOut['Content-Type'] = 'applicatoin/json'
     r.return(200, JSON.stringify(jwt.decode(session_data).payload));
 }
 
 function login(r) {
+    if (r.variables.request_method != 'GET') {
+        r.log(`OIDC validate: request method is not GET: method=${r.variables.request_method}`);
+        r.return(401);
+        return;
+    }
+    if (regex_top_page_url_pattern) {
+
+        if (regex_top_page_url_pattern.test(r.variables.request_uri)) {
+            r.log(`OIDC login: request uri match for OIDC_TOP_PAGE_URL_PATTERN:${process.env.OIDC_TOP_PAGE_URL_PATTERN} : ${r.variables.request_uri}`);
+        } else {
+            r.log(`OIDC login: request uri does not match for OIDC_TOP_PAGE_URL_PATTERN:${process.env.OIDC_TOP_PAGE_URL_PATTERN} : ${r.variables.request_uri}`);
+            r.return(401);
+            return;
+        }
+    } else {
+        r.log("OIDC login: OIDC_TOP_PAGE_URL_PATTERN environment variable is not set");
+    }
     let postlogin_uri = scheme + "://" + r.variables.host + "/auth/postlogin";
     let referer = r.variables.uri;
     let params = qs.stringify({
@@ -60,31 +149,34 @@ function login(r) {
 async function postlogin(r) {
     try {
         let referer = r.args.p;
-        let postlogin_uri = scheme + "://" + r.variables.host + "/auth/postlogin";
+        let postlogin_uri = `${scheme}://${r.variables.host}/auth/postlogin`;
 
         let redirect_uri = postlogin_uri + "?" + qs.stringify({p: referer});
         let tokens = await get_token(r.args.code, redirect_uri);
+        r.log("OIDC postlogin: tokens: " + JSON.stringify(tokens));
 
-        // let claims = await get_userinfo(tokens.access_token);
         let claims = jwt.decode(tokens.access_token).payload;
 
         let secret_key = process.env.JWT_GEN_KEY;
-        let my_access_token = await jwt.encode(userinfo.convert(claims), secret_key);
+        let my_access_token = await jwt.encode(claims, secret_key);
 
-        r.headersOut["Set-Cookie"] = [
-            "OIDC_ACCESS_TOKEN=" + tokens.access_token + "; Path=/; Secure; HttpOnly",
-            "OIDC_SESSION=" + tokens.refresh_token + "; Path=/; Secure; HttpOnly",
-            "MY_ACCESS_TOKEN=" + my_access_token + "; Path=/; Secure; HttpOnly"
-        ];
+        let cookies = [`MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`];
+        if (tokens.refresh_token) {
+            let session_claims = jwt.decode(tokens.refresh_token).payload;
+            let expires = new Date(session_claims.exp * 1000).toUTCString();
+            cookies.push(`OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`)
+            r.log(`OIDC postlogin: refresh token is found: Expires=${expires}Set-Cookie=${JSON.stringify(cookies)}`);
+        }
+        r.headersOut["Set-Cookie"] = cookies;
         r.return(302, referer);
     }  catch (e) {
-        r.error(e.message);
+        r.error(e.stack);
         r.return(403);  // Forbidden
     }
 }
 
 function logout(r) {
-    let postlogout_uri = scheme + "://" + r.variables.host + "/auth/postlogout";
+    let postlogout_uri = `${scheme}://${r.variables.host}/auth/postlogout`;
     let params = qs.stringify({
         client_id : process.env.OIDC_CLIENT_ID,
         post_logout_redirect_uri : postlogout_uri,
@@ -95,7 +187,6 @@ function logout(r) {
 
 function postlogout(r) {
     r.headersOut['Set-Cookie'] = [
-        "OIDC_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
         "OIDC_SESSION=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
         "MY_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
     ];
