@@ -59,15 +59,15 @@ async function refresh_token(r) {
         let secret_key = process.env.JWT_GEN_KEY;
         let my_access_token = await jwt.encode(new_claims, secret_key);
     
-        r.headersOut["X-New-Access-Token"] = "MY_ACCESS_TOKEN=" + my_access_token + process.env.OIDC_COOKIE_OPTIONS    
+        r.headersOut["X-New-Access-Token"] = `MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`    
         if (tokens.refresh_token) {
             let session_claims = jwt.decode(tokens.refresh_token).payload;
-            expires = new Date(session_claims.exp * 1000).toUTCString();
-            r.headersOut["X-New-Session-Token"] = "OIDC_SESSION=" + tokens.refresh_token + ";Expires=" + expires + process.env.OIDC_COOKIE_OPTIONS    
+            let expires = new Date(session_claims.exp * 1000).toUTCString();
+            r.headersOut["X-New-Session-Token"] = `OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`    
         }
-        r.log("OIDC validate: succeeded to refresh token: " + my_access_token);
+        r.log(`OIDC validate: succeeded to refresh token: ${my_access_token}`);
     }  catch (e) {
-        r.error("OIDC validate: fail to refresh token: " + e.stack);
+        r.error(`OIDC validate: fail to refresh token: ${e.stack}`);
         return 401
     }
     return 200;
@@ -86,7 +86,7 @@ async function validate(r) {
             r.return(status);
             return
         }
-        if (await jwt.verify(my_access_token, secret_key)) {
+        if (!await jwt.verify(my_access_token, secret_key)) {
             r.log("OIDC validate: token is invalid: " + my_access_token + " key:" + secret_key);
             r.return(401)
             return
@@ -101,11 +101,11 @@ async function validate(r) {
                 r.return(200);
             }
         } else {
-            r.log("OIDC validate: fail to decode: " + my_access_token + " craims:" + JSON.stringify(claims));
+            r.log(`OIDC validate: fail to decode: ${my_access_token} craims:${JSON.stringify(claims)}`);
             r.return(401);
         }    
     }  catch (e) {
-        r.error("OIDC validate: fail to valicate process: " + e.stack);
+        r.error(`OIDC validate: fail to valicate process: ${e.stack}`);
         r.return(401);
     }
 }
@@ -118,18 +118,16 @@ async function session(r) {
 
 function login(r) {
     if (r.variables.request_method != 'GET') {
-        r.log("OIDC validate: request method is not GET: method=" + r.variables.request_method);
+        r.log(`OIDC validate: request method is not GET: method=${r.variables.request_method}`);
         r.return(401);
         return;
     }
     if (regex_top_page_url_pattern) {
 
         if (regex_top_page_url_pattern.test(r.variables.request_uri)) {
-            r.log("OIDC login: request uri match for OIDC_TOP_PAGE_URL_PATTERN:" + 
-                process.env.OIDC_TOP_PAGE_URL_PATTERN +" : " + r.variables.request_uri);
+            r.log(`OIDC login: request uri match for OIDC_TOP_PAGE_URL_PATTERN:${process.env.OIDC_TOP_PAGE_URL_PATTERN} : ${r.variables.request_uri}`);
         } else {
-            r.log("OIDC login: request uri does not match for OIDC_TOP_PAGE_URL_PATTERN:" + 
-            process.env.OIDC_TOP_PAGE_URL_PATTERN +" : " + r.variables.request_uri);
+            r.log(`OIDC login: request uri does not match for OIDC_TOP_PAGE_URL_PATTERN:${process.env.OIDC_TOP_PAGE_URL_PATTERN} : ${r.variables.request_uri}`);
             r.return(401);
             return;
         }
@@ -151,7 +149,7 @@ function login(r) {
 async function postlogin(r) {
     try {
         let referer = r.args.p;
-        let postlogin_uri = scheme + "://" + r.variables.host + "/auth/postlogin";
+        let postlogin_uri = `${scheme}://${r.variables.host}/auth/postlogin`;
 
         let redirect_uri = postlogin_uri + "?" + qs.stringify({p: referer});
         let tokens = await get_token(r.args.code, redirect_uri);
@@ -162,12 +160,14 @@ async function postlogin(r) {
         let secret_key = process.env.JWT_GEN_KEY;
         let my_access_token = await jwt.encode(claims, secret_key);
 
-        r.headersOut["Set-Cookie"] = ["MY_ACCESS_TOKEN=" + my_access_token + process.env.OIDC_COOKIE_OPTIONS];
+        let cookies = [`MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`];
         if (tokens.refresh_token) {
             let session_claims = jwt.decode(tokens.refresh_token).payload;
-            expires = new Date(session_claims.exp * 1000).toUTCString();
-            r.headersOut["Set-Cookie"].push("OIDC_SESSION=" + tokens.refresh_token + ";Expires=" + expires + process.env.OIDC_COOKIE_OPTIONS)
+            let expires = new Date(session_claims.exp * 1000).toUTCString();
+            cookies.push(`OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`)
+            r.log(`OIDC postlogin: refresh token is found: Expires=${expires}Set-Cookie=${JSON.stringify(cookies)}`);
         }
+        r.headersOut["Set-Cookie"] = cookies;
         r.return(302, referer);
     }  catch (e) {
         r.error(e.stack);
@@ -176,7 +176,7 @@ async function postlogin(r) {
 }
 
 function logout(r) {
-    let postlogout_uri = scheme + "://" + r.variables.host + "/auth/postlogout";
+    let postlogout_uri = `${scheme}://${r.variables.host}/auth/postlogout`;
     let params = qs.stringify({
         client_id : process.env.OIDC_CLIENT_ID,
         post_logout_redirect_uri : postlogout_uri,
