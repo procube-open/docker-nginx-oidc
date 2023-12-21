@@ -70,7 +70,7 @@ async function refresh_token(r) {
             r.headersOut["X-Remote-User"] = new_claims[process.env['OIDC_USER_CLAIM']]
         }
         if (process.env['OIDC_GROUP_CLAIM']) {
-            r.headersOut["X-Group-Group"] = new_claims[process.env['OIDC_GROUP_CLAIM']]
+            r.headersOut["X-Remote-Group"] = new_claims[process.env['OIDC_GROUP_CLAIM']]
         }
         r.log(`OIDC validate: succeeded to refresh token: ${my_access_token}`);
     }  catch (e) {
@@ -110,10 +110,10 @@ async function validate(r) {
             } else {
                 r.headersOut["X-Access-Token"] = my_access_token
                 if (process.env['OIDC_USER_CLAIM']) {
-                    r.headersOut["X-Remote-User"] = claims[process.env['OIDC_USER_CLAIM']]
+                    r.headersOut["X-Remote-User"] = claims.payload[process.env['OIDC_USER_CLAIM']]
                 }
                 if (process.env['OIDC_GROUP_CLAIM']) {
-                    r.headersOut["X-Group-Group"] = claims[process.env['OIDC_GROUP_CLAIM']]
+                    r.headersOut["X-Remote-Group"] = claims.payload[process.env['OIDC_GROUP_CLAIM']]
                 }
                 r.return(200);
             }
