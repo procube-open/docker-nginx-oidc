@@ -59,11 +59,18 @@ async function refresh_token(r) {
         let secret_key = process.env.JWT_GEN_KEY;
         let my_access_token = await jwt.encode(new_claims, secret_key);
     
-        r.headersOut["X-New-Access-Token"] = `MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`    
+        r.headersOut["X-New-Access-Token-Cookie"] = `MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`    
         if (tokens.refresh_token) {
             let session_claims = jwt.decode(tokens.refresh_token).payload;
             let expires = new Date(session_claims.exp * 1000).toUTCString();
-            r.headersOut["X-New-Session-Token"] = `OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`    
+            r.headersOut["X-New-Session-Token-Cookie"] = `OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`    
+        }
+        r.headersOut["X-Access-Token"] = my_access_token    
+        if (process.env['OIDC_USER_CLAIM']) {
+            r.headersOut["X-Remote-User"] = new_claims[process.env['OIDC_USER_CLAIM']]
+        }
+        if (process.env['OIDC_GROUP_CLAIM']) {
+            r.headersOut["X-Remote-Group"] = new_claims[process.env['OIDC_GROUP_CLAIM']]
         }
         r.log(`OIDC validate: succeeded to refresh token: ${my_access_token}`);
     }  catch (e) {
@@ -76,8 +83,11 @@ async function refresh_token(r) {
 async function validate(r) {
     try {
         // add_header cannot be ondemand, so always add Set-Cookie header but dummy is set when Set-Cookie is not required.
-        r.headersOut["X-New-Access-Token"] = "MY_DUMMY_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"    
-        r.headersOut["X-New-Session-Token"] = "OIDC_DUMMY_SESSION=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"    
+        r.headersOut["X-New-Access-Token-Cookie"] = "MY_DUMMY_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"    
+        r.headersOut["X-New-Session-Token-Cookie"] = "OIDC_DUMMY_SESSION=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"    
+        r.headersOut["X-Access-Token"] = "OIDC:NoAccessToken"    
+        r.headersOut["X-Remote-User"] = "OIDC:UnknownUser"    
+        r.headersOut["X-Remote-Group"] = "OIDC:UnknownGroup"    
         let secret_key = process.env.JWT_GEN_KEY;
         let my_access_token = r.variables.cookie_MY_ACCESS_TOKEN;
         if (!my_access_token) {
@@ -98,6 +108,13 @@ async function validate(r) {
                 let status = await refresh_token(r);
                 r.return(status);
             } else {
+                r.headersOut["X-Access-Token"] = my_access_token
+                if (process.env['OIDC_USER_CLAIM']) {
+                    r.headersOut["X-Remote-User"] = claims.payload[process.env['OIDC_USER_CLAIM']]
+                }
+                if (process.env['OIDC_GROUP_CLAIM']) {
+                    r.headersOut["X-Remote-Group"] = claims.payload[process.env['OIDC_GROUP_CLAIM']]
+                }
                 r.return(200);
             }
         } else {
