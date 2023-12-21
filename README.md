@@ -18,6 +18,8 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 |OIDC_SCOPE| OpenID Connect のスコープ| "openid"|
 |OIDC_REDIRECT_SCHEME|OP から戻ってくる時のURLの scheme。デフォルトは 'http' なので、https にリダイレクトする必要がある場合は 'https' を指定する。|
 |OIDC_COOKIE_OPTIONS| Cookie に付与するオプション文字列である。デフォルトは ’; Path=/; secure; httpOnly' で https が前提となっている。|
+|OIDC_USER_CLAIM|claim名を指定すると、upstream に対して HTTP_REMOTEUSER ヘッダーでアクセストークンのその claim の値を送信する|username|
+|OIDC_GROUP_CLAIM|claim名を指定すると、upstream に対して HTTP_REMOTEGROUP ヘッダーでアクセストークンのその claim の値を送信する|userrole|
 |JWT_GEN_KEY| JWT 署名鍵 | "Your Secrets(must be replaced)"|
 |NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE|ワーカプロセス数を自動的に調整する|"true"|
 |NGINX_ENTRYPOINT_LOCAL_RESOLVERS|/etc/resolv.confに指定されているIPアドレスを環境変数 NGINX_LOCAL_RESOLVERS に展開する|"true"|
