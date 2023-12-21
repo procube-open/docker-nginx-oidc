@@ -25,6 +25,7 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 |NGINX_ENTRYPOINT_LOCAL_RESOLVERS|/etc/resolv.confに指定されているIPアドレスを環境変数 NGINX_LOCAL_RESOLVERS に展開する|"true"|
 |NGINX_LOCAL_RESOLVERS|nginx の resolver ディレクティブに指定する値（NGINX_ENTRYPOINT_LOCAL_RESOLVERSがfalse の場合は必ず指定しなければならない|
 
+
 ## デフォルトの設定
 
 イメージには /etc/nginx/templates/default.conf.template がインストールされており、起動時に envsubst で内部の環境変数を置換して /etc/nginx/conf.d/default.conf に展開する。
