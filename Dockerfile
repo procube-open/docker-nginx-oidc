@@ -22,6 +22,7 @@ COPY nginx.conf /etc/supervisor/conf.d/
 COPY templates/ /etc/nginx/templates/
 COPY docker-entrypoint.sh /
 RUN rm -f /var/log/nginx/*.log
+RUN chown nginx:nginx /var/log/nginx
 RUN chmod +x /docker-entrypoint.sh
 
 # avoid message: testing "/etc/nginx/html" existence failed (2: No such file or directory) while logging request
