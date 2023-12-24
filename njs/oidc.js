@@ -185,7 +185,7 @@ async function postlogin(r) {
             r.log(`OIDC postlogin: refresh token is found: Expires=${expires}Set-Cookie=${JSON.stringify(cookies)}`);
         }
         r.headersOut["Set-Cookie"] = cookies;
-        r.return(302, referer);
+        r.return(302, scheme + "://" + r.variables.host + referer);
     }  catch (e) {
         r.error(e.stack);
         r.return(403);  // Forbidden
