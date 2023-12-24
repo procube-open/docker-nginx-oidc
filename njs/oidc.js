@@ -3,11 +3,24 @@ import jwt from "jwt.js";
 
 const scheme = (typeof process.env.OIDC_REDIRECT_SCHEME === 'undefined')? 'http': process.env.OIDC_REDIRECT_SCHEME;
 
-let regex_top_page_url_pattern = null;
+let regex_top_page_url_pattern = [null, null, null, null];
 
-if (process.env.OIDC_TOP_PAGE_URL_PATTERN) {
-    regex_top_page_url_pattern = new RegExp(process.env.OIDC_TOP_PAGE_URL_PATTERN);
+if (process.env.OIDC_TOP_PAGE_URL_PATTERN0) {
+    regex_top_page_url_pattern[0] = new RegExp(process.env.OIDC_TOP_PAGE_URL_PATTERN0);
 }
+
+if (process.env.OIDC_TOP_PAGE_URL_PATTERN1) {
+    regex_top_page_url_pattern[1] = new RegExp(process.env.OIDC_TOP_PAGE_URL_PATTERN1);
+}
+
+if (process.env.OIDC_TOP_PAGE_URL_PATTERN2) {
+    regex_top_page_url_pattern[2] = new RegExp(process.env.OIDC_TOP_PAGE_URL_PATTERN2);
+}
+
+if (process.env.OIDC_TOP_PAGE_URL_PATTERN3) {
+    regex_top_page_url_pattern[3] = new RegExp(process.env.OIDC_TOP_PAGE_URL_PATTERN3);
+}
+
 
 async function get_token(code, redirect_uri) {
     let reply = await ngx.fetch(process.env.OIDC_TOKEN_ENDPOINT, {
@@ -139,9 +152,10 @@ function login(r) {
         r.return(401);
         return;
     }
-    if (regex_top_page_url_pattern) {
+    const pattern_index = Number(r.variables.regex_top_page_url_pattern_index　 || "0")
+    if (regex_top_page_url_pattern[pattern_index]) {
 
-        if (regex_top_page_url_pattern.test(r.variables.request_uri)) {
+        if (regex_top_page_url_pattern[pattern_index].test(r.variables.request_uri)) {
             r.log(`OIDC login: request uri match for OIDC_TOP_PAGE_URL_PATTERN:${process.env.OIDC_TOP_PAGE_URL_PATTERN} : ${r.variables.request_uri}`);
         } else {
             r.log(`OIDC login: request uri does not match for OIDC_TOP_PAGE_URL_PATTERN:${process.env.OIDC_TOP_PAGE_URL_PATTERN} : ${r.variables.request_uri}`);
@@ -149,7 +163,7 @@ function login(r) {
             return;
         }
     } else {
-        r.log("OIDC login: OIDC_TOP_PAGE_URL_PATTERN environment variable is not set");
+        r.log(`OIDC login: OIDC_TOP_PAGE_URL_PATTERN${r.variables.regex_top_page_url_pattern_index} environment variable is not set`);
     }
     let postlogin_uri = scheme + "://" + r.variables.host + "/auth/postlogin";
     let referer = r.variables.uri;
