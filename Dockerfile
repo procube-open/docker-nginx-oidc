@@ -18,10 +18,11 @@ RUN sed -i -e "8i load_module modules/ngx_http_js_module.so;" /etc/nginx/nginx.c
 COPY conflib/ /etc/nginx/conflib/
 COPY njs/ /etc/nginx/njs/
 COPY nginx.conf /etc/supervisor/conf.d/
-COPY docker-entrypoint.sh /
 RUN rm -f /var/log/nginx/*.log
 RUN chown nginx:nginx /var/log/nginx
-RUN chmod +x /docker-entrypoint.sh
+COPY docker-entrypoint.sh /
+COPY 60-nginx.conf.sh /docker-entrypoint.d/
+RUN chmod +x /docker-entrypoint.sh /docker-entrypoint.d/60-nginx.conf.sh
 
 # avoid message: testing "/etc/nginx/html" existence failed (2: No such file or directory) while logging request
 # https://serverfault.com/questions/808560/what-does-existence-failed-20-not-a-directory-while-logging-request-error-l
@@ -31,5 +32,6 @@ RUN mkdir /etc/nginx/html
 RUN apt install -y sudo && \
     curl -fsSL https://toolbelt.treasuredata.com/sh/install-debian-bookworm-fluent-package5-lts.sh | sh
 COPY 70-fluentd.conf.sh /docker-entrypoint.d/
+RUN chmod +x /docker-entrypoint.d/70-nginx.conf.sh
 
 ENV OIDC_COOKIE_OPTIONS "; Path=/; secure; httpOnly"
