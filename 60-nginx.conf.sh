@@ -16,6 +16,8 @@ if [ -z "${NGINX_LOCAL_RESOLVERS}" ]; then
     exit 1
 fi
 
+entrypoint_log "$ME: info: put /etc/nginx/nginx.conf."
+
 envsubst '${NGINX_LOG_LEVEL} ${NGINX_LOCAL_RESOLVERS}' > /etc/nginx/nginx.conf << 'EOF'
 user  nginx;
 worker_processes  auto;
