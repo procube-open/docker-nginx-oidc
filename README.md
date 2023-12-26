@@ -32,6 +32,11 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 ## td-agent(fluentd)
 
 コンテナには fluentd がインストールされており、その設定ファイルは /etc/nginx/conf.d/ の下の nginx のコンフィグファイルのコメントから収集する。
+nginx に以下のコメントがあると、ログの内容をmongodb に出力する。
+
+```
+# TAG: タグ名
+```
 
 ## デフォルトの設定
 
