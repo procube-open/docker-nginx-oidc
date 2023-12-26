@@ -67,3 +67,19 @@ server {
 
 このプロキシはOP から取得したアクセストークンの criam に署名し、セッションクッキー MY_ACCESS_TOKEN にセットする。
 
+## コンフィグレーションファイルテンプレート
+
+環境変数を含んだコンフィグレーションファイルを /etc/nginx/templates におくことで、起動時に /etc/nginx/conf.d の下に展開できる。
+このとき、 上記デフォルト設定のように server コンテキストで oidc-server.conf を include し、
+プロキシするlocation コンテキストに oidc-proxy.conf を include することで、
+keycloak と OpenID Connect で連携するリバースプロキシとすることができる。
+
+## アクセスログ
+
+以下のように設定することで、アクセスログがJSON形式で出力される。また、fluentd が有効である場合は mongoDB にも書き込まれる。
+
+```
+# TAG: idp
+access_log /var/log/nginx/access.idp.log json;
+```
+
