@@ -9,7 +9,7 @@ entrypoint_log() {
     fi
 }
 
-NGINX_LOG_LEVEL=${NGINX_LOG_LEVEL:-notice}
+export NGINX_LOG_LEVEL=${NGINX_LOG_LEVEL:-notice}
 
 if [ -z "${NGINX_LOCAL_RESOLVERS}" ]; then
     entrypoint_log "$ME: error: Environment variable NGINX_LOCAL_RESOLVERS must be set."
