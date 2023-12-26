@@ -2,8 +2,6 @@
 
 https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak と OpenID Connect で連携するリバースプロキシを開発した。
 
-
-
 ## 環境変数
 
 |変数名|意味|指定例|
@@ -25,7 +23,15 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 |NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE|ワーカプロセス数を自動的に調整する|"true"|
 |NGINX_ENTRYPOINT_LOCAL_RESOLVERS|/etc/resolv.confに指定されているIPアドレスを環境変数 NGINX_LOCAL_RESOLVERS に展開する|"true"|
 |NGINX_LOCAL_RESOLVERS|nginx の resolver ディレクティブに指定する値（NGINX_ENTRYPOINT_LOCAL_RESOLVERSがfalse の場合は必ず指定しなければならない|
+|NGINX_CONFIGURE_FLUENTD|fluentd を組み込む場合 true を指定する|"true"|
+|LOGDB_HOST|ログDBのホスト名|authz-db|
+|LOGDB_USERNAME|ログDBにアクセスするユーザ|fluentd|
+|LOGDB_PASSWORD|ログDBにアクセス際のパスワード|fluentd|
 
+
+## td-agent(fluentd)
+
+コンテナには fluentd がインストールされており、その設定ファイルは /etc/nginx/conf.d/ の下の nginx のコンフィグファイルのコメントから収集する。
 
 ## デフォルトの設定
 
