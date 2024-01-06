@@ -24,6 +24,7 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 |NGINX_ENTRYPOINT_LOCAL_RESOLVERS|/etc/resolv.confに指定されているIPアドレスを環境変数 NGINX_LOCAL_RESOLVERS に展開する|"true"|
 |NGINX_LOCAL_RESOLVERS|nginx の resolver ディレクティブに指定する値（NGINX_ENTRYPOINT_LOCAL_RESOLVERSがfalse の場合は必ず指定しなければならない|
 |NGINX_CONFIGURE_FLUENTD|fluentd を組み込む場合 true を指定する|"true"|
+|NGINX_LOG_LEVEL|nginx のログレベルを指定した値に設定する|debug|
 |LOGDB_HOST|ログDBのホスト名|authz-db|
 |LOGDB_USERNAME|ログDBにアクセスするユーザ|fluentd|
 |LOGDB_PASSWORD|ログDBにアクセス際のパスワード|fluentd|
@@ -38,46 +39,69 @@ nginx に以下のコメントがあると、ログの内容をmongodb に出力
 # TAG: タグ名
 ```
 
-## デフォルトの設定
+## server コンテキストの設定
 
-イメージには /etc/nginx/templates/default.conf.template がインストールされており、起動時に envsubst で内部の環境変数を置換して /etc/nginx/conf.d/default.conf に展開する。
+イメージの /etc/nginx/conf.d/default.conf は全てのアクセスに対して 400 Bad Request を返すように設定されている。
+アクセスを受け入れる server コンテキストのテンプレートを /etc/nginx/templates/*.conf.template に置くことによって起動時に envsubst で内部の環境変数を置換して /etc/nginx/conf.d の下に展開させることができる。
+
+### 設定例
 
 ```
 server {
-    http2 ${DEFAULT_HTTP2};
-    listen 80 default;
-    server_name ${DEFAULT_WEB_FQDN};
+    listen 80;
+    server_name www.example.com;
 
-    if ($host != ${DEFAULT_WEB_FQDN}) {
-        return 400;
-    }
     location / {
         include /etc/nginx/conflib/oidc-proxy.conf;
-        proxy_pass ${DEFAULT_WEB_UPSTREAML_URL};
+        proxy_pass ${UPSTREAML_URL};
     }
 
     include /etc/nginx/conflib/oidc-server.conf;
 }
 ```
 
-デフォルトのテンプレートでは以下の環境変数を指定しなければならない。
+このようなテンプレートを /etc/nginx/templates/example.conf.template　として置くことで、server コンテキストのコンフィグレーションファイルが /etc/nginx/conf.d/example.conf に生成される。このコンフィグレーションファイルでは HOST　ヘッダーの値が www.example.com に一致するリクエストのみを受け入れ、UPSTREAM_URL 環境変数で指定された Web サービスにプロキシ転送する。
 
-|変数名|意味|指定例|
-|--|--|--|
-|DEFAULT_WEB_FQDN|デフォルトのFQDN|"localhost"|
-|DEFAULT_WEB_UPSTREAML_URL|デフォルトのアップストリームのURL|"http://backend"|
-|DEFAULT_HTTP2|"on"を指定すると h2c 通信を受信する。http1.0 を使用する場合は "off" を指定する。|"off"|
+### nginx.conf
+
+/etc/nginx.conf はコンテナ起動時に生成され、以下の設定が埋め込まれる。
+
+- NGINX_LOG_LEVEL に従って nginx のログレベルを設定する
+- JSON形式のアクセスログのフォーマット　json を定義する
+- OIDC連携のための JavaScript　オブジェクトをロードする
+
+### コンフィグレーションライブラリ
+
+上記の中で ```include /etc/nginx/conflib/oidc-proxy.conf;``` と　 ```include /etc/nginx/conflib/oidc-server.conf;``` の２行は OpenID　Connect　での認証機能を追加するコンフィグレーションライブラリである。
+
+#### oidc-server.conf
+
+OpenID Connect の RP として動作するための location を設定する。以下の location が設定される。
+
+|パス|機能|
+|--|--|
+|/auth/validate|auth_request ディレクティブから呼び出され、アクセストークンの検証を行う。|
+|@login|アクセストークンの検証に失敗した際に OIDC OP を呼び出す|
+|/auth/postlogin|OPからリダイレクトで認証コードを受け取り、アクセストークン・リフレッシュトークンと交換し、 Cookie に設定する|
+|/logout|OIDC SLO を呼び出す|
+|/auth/postlogout|OIDC SLO 実行後、Cookie を削除する|
+|/.session|クライアントに対してJSON形式でセッション情報を返す API|
+|@bye|ログアウト後の表示を行う|
+
+#### oidc-proxy.conf
+
+リバースプロキシとして動作を行う location コンテキストで使用することができる。アクセストークンの検証を行った結果によって以下の動作を行う。
+
+- Cookie のアクセストークンが有効である場合は、リクエストをプロキシ転送する
+- Cookie のアクセストークンが無効あるいはない場合でもリフレッシュトークンが有効であれば、OPにアクセストークンとリフレッシュトークンの再発行を要求し、成功すればリクエストをプロキシ転送後、返しのパケットでアクセストークンとリフレッシュトークンを Cookie に設定する
+- 未認証の場合でパスが環境変数 OIDC_TOP_PAGE_URL_PATTERN の正規表現にマッチする場合は OP にリダイレクトして認証を委譲する
+- 未認証の場合でパスが環境変数 OIDC_TOP_PAGE_URL_PATTERN の正規表現にマッチしない場合は 401 のエラーになる
+
+上記で Cookieに設定するアクセストークンは OP が発行するアクセストークンのペイロードに対してプロキシ自身のシークレットキーで署名をやり直したものである。
 
 ## セッションクッキー
 
 このプロキシはOP から取得したアクセストークンの criam に署名し、セッションクッキー MY_ACCESS_TOKEN にセットする。
-
-## コンフィグレーションファイルテンプレート
-
-環境変数を含んだコンフィグレーションファイルを /etc/nginx/templates におくことで、起動時に /etc/nginx/conf.d の下に展開できる。
-このとき、 上記デフォルト設定のように server コンテキストで oidc-server.conf を include し、
-プロキシするlocation コンテキストに oidc-proxy.conf を include することで、
-keycloak と OpenID Connect で連携するリバースプロキシとすることができる。
 
 ## アクセスログ
 

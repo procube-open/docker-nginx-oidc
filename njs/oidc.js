@@ -167,18 +167,26 @@ function login(r) {
     }
     let postlogin_uri = scheme + "://" + r.variables.host + "/auth/postlogin";
     let referer = r.variables.uri;
-    let params = qs.stringify({
+    let params = {
         response_type : "code",
         scope         : process.env.OIDC_SCOPE,
         client_id     : process.env.OIDC_CLIENT_ID,
         redirect_uri  : postlogin_uri + "?" + qs.stringify({p: referer}),
-    });
-    let url = process.env.OIDC_AUTH_ENDPOINT + "?" + params;
+    };
+    if (r.variables.oidc_acr) {
+        params["acr_values"] = r.variables.oidc_acr.split(' ')
+    }
+    let url = process.env.OIDC_AUTH_ENDPOINT + "?" + qs.stringify(params);
     r.return(302, url);
 }
 
 async function postlogin(r) {
     try {
+        if (r.args.error) {
+            r.error("OP returns error: " + r.args.error);
+            r.return(401) // Unauthorized
+            return
+        }
         let referer = r.args.p;
         let postlogin_uri = `${scheme}://${r.variables.host}/auth/postlogin`;
 
