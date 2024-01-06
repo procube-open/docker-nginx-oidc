@@ -21,8 +21,8 @@ COPY nginx.conf /etc/supervisor/conf.d/
 RUN rm -f /var/log/nginx/*.log
 RUN chown nginx:nginx /var/log/nginx
 COPY docker-entrypoint.sh /
-COPY 60-nginx.conf.sh /docker-entrypoint.d/
-RUN chmod +x /docker-entrypoint.sh /docker-entrypoint.d/60-nginx.conf.sh
+COPY 25-nginx.conf.sh /docker-entrypoint.d/
+RUN chmod +x /docker-entrypoint.sh /docker-entrypoint.d/25-nginx.conf.sh
 
 # avoid message: testing "/etc/nginx/html" existence failed (2: No such file or directory) while logging request
 # https://serverfault.com/questions/808560/what-does-existence-failed-20-not-a-directory-while-logging-request-error-l
