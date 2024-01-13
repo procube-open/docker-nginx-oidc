@@ -85,9 +85,9 @@ async function refresh_token(r) {
         if (process.env['OIDC_GROUP_CLAIM']) {
             r.headersOut["X-Remote-Group"] = new_claims[process.env['OIDC_GROUP_CLAIM']]
         }
-        r.log(`OIDC validate: succeeded to refresh token: ${my_access_token}`);
+        r.log(`OIDC refresh_token: succeeded: ${my_access_token}`);
     }  catch (e) {
-        r.error(`OIDC validate: fail to refresh token: ${e.stack}`);
+        r.error(`OIDC refresh_token: error: ${e.stack || e}`);
         return 401
     }
     return 200;
@@ -135,7 +135,7 @@ async function validate(r) {
             r.return(401);
         }    
     }  catch (e) {
-        r.error(`OIDC validate: fail to valicate process: ${e.stack}`);
+        r.error(`OIDC validate: error: ${e.stack || e}`);
         r.return(401);
     }
 }
@@ -209,7 +209,7 @@ async function postlogin(r) {
         r.headersOut["Set-Cookie"] = cookies;
         r.return(302, scheme + "://" + r.variables.host + referer);
     }  catch (e) {
-        r.error(e.stack);
+        r.error(`OIDC postlogin: error: ${e.stack || e}`);
         r.return(403);  // Forbidden
     }
 }
