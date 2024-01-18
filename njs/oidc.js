@@ -230,7 +230,7 @@ function postlogout(r) {
         "MY_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
     ];
     r.headersOut['Content-Type'] = 'text/html'
-    r.internalRedirect(process.env.OIDC_POSTLOGOUT_PATH || "@bye");
+    r.internalRedirect(process.env.OIDC_POSTLOGOUT_CONTENT || "@bye");
 }
 
 export default {validate, login, logout, postlogin, postlogout, session}
