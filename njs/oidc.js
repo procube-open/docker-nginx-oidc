@@ -85,9 +85,9 @@ async function refresh_token(r) {
         if (process.env['OIDC_GROUP_CLAIM']) {
             r.headersOut["X-Remote-Group"] = new_claims[process.env['OIDC_GROUP_CLAIM']]
         }
-        r.log(`OIDC validate: succeeded to refresh token: ${my_access_token}`);
+        r.log(`OIDC refresh_token: succeeded: ${my_access_token}`);
     }  catch (e) {
-        r.error(`OIDC validate: fail to refresh token: ${e.stack}`);
+        r.error(`OIDC refresh_token: error: ${e.stack || e}`);
         return 401
     }
     return 200;
@@ -135,7 +135,7 @@ async function validate(r) {
             r.return(401);
         }    
     }  catch (e) {
-        r.error(`OIDC validate: fail to valicate process: ${e.stack}`);
+        r.error(`OIDC validate: error: ${e.stack || e}`);
         r.return(401);
     }
 }
@@ -167,18 +167,26 @@ function login(r) {
     }
     let postlogin_uri = scheme + "://" + r.variables.host + "/auth/postlogin";
     let referer = r.variables.uri;
-    let params = qs.stringify({
+    let params = {
         response_type : "code",
         scope         : process.env.OIDC_SCOPE,
         client_id     : process.env.OIDC_CLIENT_ID,
         redirect_uri  : postlogin_uri + "?" + qs.stringify({p: referer}),
-    });
-    let url = process.env.OIDC_AUTH_ENDPOINT + "?" + params;
+    };
+    if (r.variables.oidc_acr) {
+        params["acr_values"] = r.variables.oidc_acr.split(' ')
+    }
+    let url = process.env.OIDC_AUTH_ENDPOINT + "?" + qs.stringify(params);
     r.return(302, url);
 }
 
 async function postlogin(r) {
     try {
+        if (r.args.error) {
+            r.error("OP returns error: " + r.args.error);
+            r.return(401) // Unauthorized
+            return
+        }
         let referer = r.args.p;
         let postlogin_uri = `${scheme}://${r.variables.host}/auth/postlogin`;
 
@@ -201,7 +209,7 @@ async function postlogin(r) {
         r.headersOut["Set-Cookie"] = cookies;
         r.return(302, scheme + "://" + r.variables.host + referer);
     }  catch (e) {
-        r.error(e.stack);
+        r.error(`OIDC postlogin: error: ${e.stack || e}`);
         r.return(403);  // Forbidden
     }
 }
@@ -222,7 +230,7 @@ function postlogout(r) {
         "MY_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
     ];
     r.headersOut['Content-Type'] = 'text/html'
-    r.internalRedirect("@bye");
+    r.internalRedirect(process.env.OIDC_POSTLOGOUT_CONTENT || "@bye");
 }
 
 export default {validate, login, logout, postlogin, postlogout, session}
