@@ -34,4 +34,7 @@ RUN apt install -y sudo && \
 COPY 70-fluentd.conf.sh /docker-entrypoint.d/
 RUN chmod +x /docker-entrypoint.d/70-fluentd.conf.sh
 
+# Return 400 default
+COPY default.conf /etc/nginx/conf.d/
+
 ENV OIDC_COOKIE_OPTIONS "; Path=/; secure; httpOnly"
