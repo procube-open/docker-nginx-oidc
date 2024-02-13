@@ -112,3 +112,7 @@ OpenID Connect の RP として動作するための location を設定する。
 access_log /var/log/nginx/access.idp.log json;
 ```
 
+## エラーログ
+
+nginx のエラーログはコンテナの標準出力に出力される。
+このため、バックグラウンドで実行されている場合、 docker logs で参照することが可能である。

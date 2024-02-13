@@ -22,7 +22,7 @@ envsubst '${NGINX_LOG_LEVEL} ${NGINX_LOCAL_RESOLVERS}' > /etc/nginx/nginx.conf <
 user  nginx;
 worker_processes  auto;
 
-error_log  /var/log/nginx/error.log ${NGINX_LOG_LEVEL};
+error_log /dev/stdout ${NGINX_LOG_LEVEL};
 pid        /var/run/nginx.pid;
 
 load_module modules/ngx_http_js_module.so;
