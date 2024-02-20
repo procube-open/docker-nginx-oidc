@@ -67,6 +67,10 @@ async function refresh_token(r) {
             }),
         });
         let tokens = await reply.json();
+        if (!tokens.access_token) {
+            r.error(`refresh_token: fail to get access_token: ${JSON.stringify(tokens)}`);
+            return 401                
+        }
         let new_claims = jwt.decode(tokens.access_token).payload;
 
         let secret_key = process.env.JWT_GEN_KEY;
@@ -96,8 +100,8 @@ async function refresh_token(r) {
 async function validate(r) {
     try {
         // add_header cannot be ondemand, so always add Set-Cookie header but dummy is set when Set-Cookie is not required.
-        r.headersOut["X-New-Access-Token-Cookie"] = "MY_DUMMY_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"    
-        r.headersOut["X-New-Session-Token-Cookie"] = "OIDC_DUMMY_SESSION=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT"    
+        r.headersOut["X-New-Access-Token-Cookie"] = `MY_DUMMY_ACCESS_TOKEN=; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT${process.env.OIDC_COOKIE_OPTIONS}`
+        r.headersOut["X-New-Session-Token-Cookie"] = `OIDC_DUMMY_SESSION=; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT${process.env.OIDC_COOKIE_OPTIONS}`
         r.headersOut["X-Access-Token"] = "OIDC:NoAccessToken"    
         r.headersOut["X-Remote-User"] = "OIDC:UnknownUser"    
         r.headersOut["X-Remote-Group"] = "OIDC:UnknownGroup"    
@@ -225,11 +229,18 @@ function logout(r) {
 }
 
 function postlogout(r) {
-    r.headersOut['Set-Cookie'] = [
-        "OIDC_SESSION=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
-        "MY_ACCESS_TOKEN=; Path=/; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT",
-    ];
+    let clearCookies = []
+    if (r.variables.cookie_OIDC_SESSION) {
+        clearCookies.push(`OIDC_SESSION=${r.variables.cookie_OIDC_SESSION}; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT${process.env.OIDC_COOKIE_OPTIONS}`)
+    }
+    if (r.variables.cookie_MY_ACCESS_TOKEN) {
+        clearCookies.push(`MY_ACCESS_TOKEN=${r.variables.cookie_MY_ACCESS_TOKEN}; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT${process.env.OIDC_COOKIE_OPTIONS}`)
+    }
+    if (clearCookies.length > 0) {
+        r.headersOut['Set-Cookie'] = clearCookies
+    }
     r.headersOut['Content-Type'] = 'text/html'
+    r.headersOut['Cache-Control'] = 'no-cache'
     r.internalRedirect(process.env.OIDC_POSTLOGOUT_CONTENT || "@bye");
 }
 
