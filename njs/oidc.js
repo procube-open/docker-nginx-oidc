@@ -229,11 +229,18 @@ function logout(r) {
 }
 
 function postlogout(r) {
-    r.headersOut['Set-Cookie'] = [
-        `OIDC_SESSION=; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT${process.env.OIDC_COOKIE_OPTIONS}`,
-        `MY_ACCESS_TOKEN=; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT${process.env.OIDC_COOKIE_OPTIONS}`,
-    ];
+    let clearCookies = []
+    if (r.variables.cookie_OIDC_SESSION) {
+        clearCookies.push(`OIDC_SESSION=${r.variables.cookie_OIDC_SESSION}; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT${process.env.OIDC_COOKIE_OPTIONS}`)
+    }
+    if (r.variables.cookie_MY_ACCESS_TOKEN) {
+        clearCookies.push(`MY_ACCESS_TOKEN=${r.variables.cookie_MY_ACCESS_TOKEN}; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT${process.env.OIDC_COOKIE_OPTIONS}`)
+    }
+    if (clearCookies.length > 0) {
+        r.headersOut['Set-Cookie'] = clearCookies
+    }
     r.headersOut['Content-Type'] = 'text/html'
+    r.headersOut['Cache-Control'] = 'no-cache'
     r.internalRedirect(process.env.OIDC_POSTLOGOUT_CONTENT || "@bye");
 }
 
