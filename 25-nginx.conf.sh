@@ -2,6 +2,7 @@
 # vim:sw=4:ts=4:et
 
 set -e
+export ME=$(basename "$0")
 
 entrypoint_log() {
     if [ -z "${NGINX_ENTRYPOINT_QUIET_LOGS:-}" ]; then
@@ -10,15 +11,15 @@ entrypoint_log() {
 }
 
 export NGINX_LOG_LEVEL=${NGINX_LOG_LEVEL:-notice}
-
-if [ -z "${NGINX_LOCAL_RESOLVERS}" ]; then
-    entrypoint_log "$ME: error: Environment variable NGINX_LOCAL_RESOLVERS must be set."
-    exit 1
+export NGINX_RESOLVER_LINE=""
+if [ -n "${NGINX_LOCAL_RESOLVERS}" ]; then
+    export NGINX_RESOLVER_LINE="resolver ${NGINX_LOCAL_RESOLVERS};"
 fi
 
 entrypoint_log "$ME: info: put /etc/nginx/nginx.conf."
 
-envsubst '${NGINX_LOG_LEVEL} ${NGINX_LOCAL_RESOLVERS}' > /etc/nginx/nginx.conf << 'EOF'
+envsubst '${ME} ${NGINX_LOG_LEVEL} ${NGINX_RESOLVER_LINE}' > /etc/nginx/nginx.conf << 'EOF'
+# This file generated from /docker-entrypoint.d/${ME}
 user  nginx;
 worker_processes  auto;
 
@@ -35,6 +36,8 @@ events {
 http {
     include       /etc/nginx/mime.types;
     default_type  application/octet-stream;
+    uninitialized_variable_warn off;
+    server_tokens off;
 
     log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
                       '$status $body_bytes_sent "$http_referer" '
@@ -47,8 +50,17 @@ http {
 
     keepalive_timeout  65;
 
-    #gzip  on;
-    resolver ${NGINX_LOCAL_RESOLVERS};
+    # refer: https://itnext.io/nginx-create-react-app-gzip-tripple-your-lighthouse-performance-score-in-5-minutes-627465c3f445
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_buffers 16 8k;
+    gzip_http_version 1.1;
+    gzip_min_length 0;
+    gzip_types text/plain application/javascript text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/vnd.ms-fontobject application/x-font-ttf font/opentype;
+
+    ${NGINX_RESOLVER_LINE}
 
     js_path "/etc/nginx/njs/";
     js_import oidc from oidc.js;

@@ -116,3 +116,33 @@ access_log /var/log/nginx/access.idp.log json;
 
 nginx のエラーログはコンテナの標準出力に出力される。
 このため、バックグラウンドで実行されている場合、 docker logs で参照することが可能である。
+
+## 脆弱性対応テスト
+
+以下のテストを実行して問題がないことを確認している。
+
+```
+docker run -d --name test -e NGINX_ENTRYPOINT_LOCAL_RESOLVERS=yes procube/nginx-oidc
+docker exec test sh -c "apt install -y python3.11-venv;python3 -m venv gixy; /gixy/bin/pip install gixy-ng; /gixy/bin/gixy /etc/nginx/nginx.conf"
+```
+ここで出力の最後に以下のように表示されれば ok である。
+
+```
+==================== Results ===================
+No issues found.
+
+==================== Summary ===================
+Total issues:
+    Unspecified: 0
+    Low: 0
+    Medium: 0
+    High: 0
+```
+
+不要となったコンテナを捨てるためには以下を実行する。
+
+```
+docker stop test
+docker rm test
+```
+

@@ -2,6 +2,7 @@
 # vim:sw=4:ts=4:et
 
 set -e
+ME=$(basename "$0")
 
 entrypoint_log() {
     if [ -z "${NGINX_ENTRYPOINT_QUIET_LOGS:-}" ]; then
