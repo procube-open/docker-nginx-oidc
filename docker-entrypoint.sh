@@ -13,6 +13,9 @@ if /usr/bin/find "/docker-entrypoint.d/" -mindepth 1 -maxdepth 1 -type f -print 
     entrypoint_log "$0: /docker-entrypoint.d/ is not empty, will attempt to perform configuration"
 
     entrypoint_log "$0: Looking for shell scripts in /docker-entrypoint.d/"
+    # original line: find "/docker-entrypoint.d/" -follow -type f -print | sort -V | while read -r f; do
+    # environment variables set in .envsh can refer in only /docker-entrypoint.d/*..sh, but not in nginx process.
+    # because "| while" fork separated bash process.
     for f in $(find "/docker-entrypoint.d/" -follow -type f -print | sort -V); do
         case "$f" in
             *.envsh)
