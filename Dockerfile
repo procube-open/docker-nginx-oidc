@@ -14,7 +14,6 @@ COPY 50-TZ.sh /docker-entrypoint.d/
 RUN chmod +x /docker-entrypoint.d/50-TZ.sh
 
 # nginx
-RUN sed -i -e "8i load_module modules/ngx_http_js_module.so;" /etc/nginx/nginx.conf
 COPY conflib/ /etc/nginx/conflib/
 COPY njs/ /etc/nginx/njs/
 COPY nginx.conf /etc/supervisor/conf.d/
