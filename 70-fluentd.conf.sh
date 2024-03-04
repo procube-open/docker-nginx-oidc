@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # vim:sw=4:ts=4:et
 
 set -e
@@ -54,8 +54,8 @@ done
 
 entrypoint_log "$ME: info: put fluentd configuration for mongodb."
 
-cat > /etc/fluentd/fluentd.conf << 'EOF'
-@include /etc/fluentd/conf.d/*.conf
+cat > /etc/fluent/fluentd.conf << 'EOF'
+@include /etc/fluent/conf.d/*.conf
 
 # Single MongoDB
 <match *.access>
