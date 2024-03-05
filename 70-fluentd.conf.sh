@@ -43,7 +43,7 @@ function build_source () {
   <parse>
     @type json
     time_type string
-    time_format %d-%b-%YT%H:%M:%S+%z
+    time_format %Y-%m-%dT%H:%M:%S+%z
     time_key time
   </parse>
 </source>
