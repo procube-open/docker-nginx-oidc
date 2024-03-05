@@ -81,3 +81,16 @@ cat > /etc/fluent/fluentd.conf << __EOF
   </buffer>
 </match>
 __EOF
+
+mongosh "mongodb://${LOGDB_HOST}" -u "${LOGDB_ROOT_USER}" -p "${LOGDB_ROOT_PASSWORD}" << __EOF
+use fluentd;
+if (db.getUser("${LOGDB_USER}") == null) {  
+  db.createUser(
+    {
+      user: "${LOGDB_USER}",
+      pwd: "${LOGDB_PASSWORD}",
+      roles: [ "readWrite" ]
+    }
+  );
+}
+__EOF

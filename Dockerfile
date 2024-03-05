@@ -29,7 +29,10 @@ RUN mkdir /etc/nginx/html
 
 # fluentd
 RUN apt install -y sudo make gcc && \
-    curl -fsSL https://toolbelt.treasuredata.com/sh/install-debian-bookworm-fluent-package5-lts.sh | sh
+    curl -fsSL https://toolbelt.treasuredata.com/sh/install-debian-bookworm-fluent-package5-lts.sh | sh && \
+    curl -L https://www.mongodb.org/static/pgp/server-7.0.asc -o /etc/apt/trusted.gpg.d/server-7.0.asc  && \
+    echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-7.0.list && \
+    apt update && apt install -y mongodb-mongosh
 ENV GEM_HOME /opt/fluent/lib/ruby/gems/3.2.0/
 ENV PATH="/opt/fluent/bin:${PATH}"
 RUN /opt/fluent/lib/ruby/gems/3.2.0/bin/fluent-gem install fluent-plugin-mongo
