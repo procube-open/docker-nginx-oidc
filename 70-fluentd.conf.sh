@@ -37,7 +37,7 @@ function build_source () {
     cat > /etc/fluent/conf.d/${tag}.conf << __EOF
 <source>
   @type tail
-  path /var/log/${tag}.log
+  path /var/log/nginx/${tag}.log
   pos_file /var/log/fluent/${tag}.log.pos
   tag ${tag}
   <parse>
