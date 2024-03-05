@@ -56,7 +56,7 @@ done
 
 entrypoint_log "$ME: info: put fluentd configuration for mongodb."
 
-cat > /etc/fluent/fluentd.conf << 'EOF'
+cat > /etc/fluent/fluentd.conf << _EOF
 @include /etc/fluent/conf.d/*.conf
 
 # Single MongoDB
@@ -80,4 +80,4 @@ cat > /etc/fluent/fluentd.conf << 'EOF'
     flush_interval 10s
   </buffer>
 </match>
-EOF
+_EOF
