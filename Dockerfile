@@ -28,7 +28,7 @@ RUN chmod +x /docker-entrypoint.sh /docker-entrypoint.d/25-nginx.conf.sh
 RUN mkdir /etc/nginx/html
 
 # fluentd
-RUN apt install -y sudo && \
+RUN apt install -y sudo make gcc && \
     curl -fsSL https://toolbelt.treasuredata.com/sh/install-debian-bookworm-fluent-package5-lts.sh | sh
 ENV GEM_HOME /opt/fluent/lib/ruby/gems/3.2.0/
 ENV PATH="/opt/fluent/bin:${PATH}"
