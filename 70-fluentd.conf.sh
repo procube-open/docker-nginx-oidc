@@ -38,7 +38,7 @@ function build_source () {
 <source>
   @type tail
   path /var/log/${tag}.log
-  pos_file /var/log/td-agent/${tag}.log.pos
+  pos_file /var/log/fluent/${tag}.log.pos
   tag ${tag}
   <parse>
     @type json
