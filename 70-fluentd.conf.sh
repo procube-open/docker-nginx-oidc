@@ -20,7 +20,7 @@ entrypoint_log "$ME: info: register fluentd to supervisord."
 cat > /etc/supervisor/conf.d/fluentd.conf << 'EOF'
 [program:fluentd]
 environment=LD_PRELOAD=/opt/fluent/lib/libjemalloc.so,GEM_HOME=/opt/fluent/lib/ruby/gems/3.2.0/,GEM_PATH=/opt/fluent/lib/ruby/gems/3.2.0/,FLUENT_CONF=/etc/fluent/fluentd.conf,FLUENT_PLUGIN=/etc/fluent/plugin,FLUENT_SOCKET=/var/run/fluent/fluentd.sock
-command=/opt/fluent/bin/fluentd --daemon /var/run/fluent/fluentd.pid
+command=/opt/fluent/bin/fluentd
 stdout_logfile=/dev/stdout
 stdout_logfile_maxbytes=0
 stderr_logfile=/dev/stderr
@@ -50,7 +50,7 @@ function build_source () {
 __EOF
 }
 
-for tag in $(sed -n -e '/^ *# *TAG/s/^ *# *TAG *\([^ ]*\) *$/\1/p' /etc/nginx/conf.d/*.conf); do
+for tag in $(sed -n -e '/^ *# *TAG/s/^ *# *TAG: *\([^ ]*\) *$/\1/p' /etc/nginx/conf.d/*.conf); do
   build_source $tag
 done
 
