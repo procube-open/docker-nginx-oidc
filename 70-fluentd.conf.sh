@@ -60,7 +60,7 @@ cat > /etc/fluent/fluentd.conf << __EOF
 @include /etc/fluent/conf.d/*.conf
 
 # Single MongoDB
-<match *.access>
+<match access.*>
   @type mongo
   host ${LOGDB_HOST}
   port 27017
