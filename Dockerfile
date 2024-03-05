@@ -28,8 +28,10 @@ RUN chmod +x /docker-entrypoint.sh /docker-entrypoint.d/25-nginx.conf.sh
 RUN mkdir /etc/nginx/html
 
 # fluentd
-RUN apt install -y sudo && \
+RUN apt install -y sudo ruby ruby-dev make gcc && \
     curl -fsSL https://toolbelt.treasuredata.com/sh/install-debian-bookworm-fluent-package5-lts.sh | sh
+ENV GEM_HOME /opt/fluent/lib/ruby/gems/3.2.0/
+RUN /opt/fluent/lib/ruby/gems/3.2.0/bin/fluent-gem install fluent-plugin-mongo
 COPY 70-fluentd.conf.sh /docker-entrypoint.d/
 RUN chmod +x /docker-entrypoint.d/70-fluentd.conf.sh
 
