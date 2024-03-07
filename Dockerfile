@@ -28,8 +28,14 @@ RUN chmod +x /docker-entrypoint.sh /docker-entrypoint.d/25-nginx.conf.sh
 RUN mkdir /etc/nginx/html
 
 # fluentd
-RUN apt install -y sudo && \
-    curl -fsSL https://toolbelt.treasuredata.com/sh/install-debian-bookworm-fluent-package5-lts.sh | sh
+RUN apt install -y sudo make gcc && \
+    curl -fsSL https://toolbelt.treasuredata.com/sh/install-debian-bookworm-fluent-package5-lts.sh | sh && \
+    curl -L https://www.mongodb.org/static/pgp/server-7.0.asc -o /etc/apt/trusted.gpg.d/server-7.0.asc  && \
+    echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-7.0.list && \
+    apt update && apt install -y mongodb-mongosh
+ENV GEM_HOME /opt/fluent/lib/ruby/gems/3.2.0/
+ENV PATH="/opt/fluent/bin:${PATH}"
+RUN /opt/fluent/lib/ruby/gems/3.2.0/bin/fluent-gem install fluent-plugin-mongo
 COPY 70-fluentd.conf.sh /docker-entrypoint.d/
 RUN chmod +x /docker-entrypoint.d/70-fluentd.conf.sh
 
