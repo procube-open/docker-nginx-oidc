@@ -1,6 +1,5 @@
 import qs from "querystring";
 import jwt from "jwt.js";
-import x509 from 'x509.js';
 
 const scheme = (typeof process.env.OIDC_REDIRECT_SCHEME === 'undefined')? 'http': process.env.OIDC_REDIRECT_SCHEME;
 
