@@ -1,5 +1,6 @@
 import qs from "querystring";
 import jwt from "jwt.js";
+import x509 from 'x509.js';
 
 const scheme = (typeof process.env.OIDC_REDIRECT_SCHEME === 'undefined')? 'http': process.env.OIDC_REDIRECT_SCHEME;
 
@@ -69,7 +70,7 @@ async function refresh_token(r) {
         let tokens = await reply.json();
         if (!tokens.access_token) {
             r.error(`refresh_token: fail to get access_token: ${JSON.stringify(tokens)}`);
-            return 401                
+            return 401;            
         }
         let new_claims = jwt.decode(tokens.access_token).payload;
 
@@ -82,19 +83,58 @@ async function refresh_token(r) {
             let expires = new Date(session_claims.exp * 1000).toUTCString();
             r.headersOut["X-New-Session-Token-Cookie"] = `OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`    
         }
-        r.headersOut["X-Access-Token"] = my_access_token    
+        r.headersOut["X-Access-Token"] = my_access_token;
         if (process.env['OIDC_USER_CLAIM']) {
-            r.headersOut["X-Remote-User"] = new_claims[process.env['OIDC_USER_CLAIM']]
+            r.headersOut["X-Remote-User"] = new_claims[process.env['OIDC_USER_CLAIM']];
         }
         if (process.env['OIDC_GROUP_CLAIM']) {
-            r.headersOut["X-Remote-Group"] = new_claims[process.env['OIDC_GROUP_CLAIM']]
+            r.headersOut["X-Remote-Group"] = new_claims[process.env['OIDC_GROUP_CLAIM']];
         }
         r.log(`OIDC refresh_token: succeeded: ${my_access_token}`);
     }  catch (e) {
         r.error(`OIDC refresh_token: error: ${e.stack || e}`);
-        return 401
+        return 401;
     }
     return 200;
+}
+
+async function validate_cert(r, pem_cert) {
+    r.log("OIDC validate_cert: Client Certificate is found, so validate it.");
+    try {
+        let reply = await ngx.fetch(process.env.OIDC_CLIENTCERT_VALIDATE_URL, {
+            method: "GET",
+            headers: { "X-Mtls-Clientcert": pem_cert }
+        });
+        if (!reply.ok) {
+            r.error(`OIDC validate_cert: the varidator returns error: ${await reply.text()}`);
+            r.return(reply.status)
+            return;
+        }
+        let claims = await reply.json();
+        claims.iat = Math.floor(Date.now() / 1000);
+        claims.exp = calims.iat + parseInt(process.env.OIDC_STATIONAY_TOKEN_SPAN);
+        let secret_key = process.env.JWT_GEN_KEY;
+        let my_access_token = await jwt.encode(claims, secret_key);
+    
+        r.headersOut["X-New-Access-Token-Cookie"] = `MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`    
+        if (tokens.refresh_token) {
+            let session_claims = jwt.decode(tokens.refresh_token).payload;
+            let expires = new Date(session_claims.exp * 1000).toUTCString();
+            r.headersOut["X-New-Session-Token-Cookie"] = `OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`    
+        }
+        r.headersOut["X-Access-Token"] = my_access_token;
+        if (process.env['OIDC_USER_CLAIM']) {
+            r.headersOut["X-Remote-User"] = claims[process.env['OIDC_USER_CLAIM']];
+        }
+        if (process.env['OIDC_GROUP_CLAIM']) {
+            r.headersOut["X-Remote-Group"] = claims[process.env['OIDC_GROUP_CLAIM']];
+        }
+        r.log(`OIDC validate_cert: succeeded: ${my_access_token}`);
+    } catch (e) {
+        r.error(`OIDC validate_cert: fail to fetch ${process.env.OIDC_CLIENTCERT_VALIDATE_URL}: ${e.stack}`);
+        r.return(401);
+    }
+    return;
 }
 
 async function validate(r) {
@@ -102,21 +142,28 @@ async function validate(r) {
         // add_header cannot be ondemand, so always add Set-Cookie header but dummy is set when Set-Cookie is not required.
         r.headersOut["X-New-Access-Token-Cookie"] = `MY_DUMMY_ACCESS_TOKEN=; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT${process.env.OIDC_COOKIE_OPTIONS}`
         r.headersOut["X-New-Session-Token-Cookie"] = `OIDC_DUMMY_SESSION=; Max-Age=-1; Expires=Wed, 21 Oct 2015 07:28:00 GMT${process.env.OIDC_COOKIE_OPTIONS}`
-        r.headersOut["X-Access-Token"] = "OIDC:NoAccessToken"    
-        r.headersOut["X-Remote-User"] = "OIDC:UnknownUser"    
-        r.headersOut["X-Remote-Group"] = "OIDC:UnknownGroup"    
+        r.headersOut["X-Access-Token"] = "OIDC:NoAccessToken"
+        r.headersOut["X-Remote-User"] = "OIDC:UnknownUser"
+        r.headersOut["X-Remote-Group"] = "OIDC:UnknownGroup"
         let secret_key = process.env.JWT_GEN_KEY;
         let my_access_token = r.variables.cookie_MY_ACCESS_TOKEN;
         if (!my_access_token) {
             r.log("OIDC validate: no access_token is found.");
+            if (r.variables.oidc_cert_header && r.headersIn[r.variables.oidc_cert_header]) {
+                let status = await validate_cert(r, r.headersIn[r.variables.oidc_cert_header]);
+                if (status == 200) {
+                    r.return(status);
+                    return;
+                }
+            }
             let status = await refresh_token(r);
             r.return(status);
-            return
+            return;
         }
         if (!await jwt.verify(my_access_token, secret_key)) {
             r.log("OIDC validate: token is invalid: " + my_access_token + " key:" + secret_key);
             r.return(401)
-            return
+            return;
         }
         let claims = jwt.decode(my_access_token);
         if( claims && claims.payload && claims.payload.exp ) {
