@@ -106,8 +106,9 @@ async function validate_cert(r, pem_cert) {
         });
         if (!reply.ok) {
             const reply_text = await reply.text();
-            r.error(`OIDC validate_cert: the varidator returns error: ${reply_text}`);
-            r.return(reply.status)
+            r.error(`OIDC validate_cert: the varidator returns error(code = ${reply.status}): ${reply_text}`);
+            if ()
+            r.return((reply.status >= 300 && reply.status < 400)? 500: reply.status)
             return;
         }
         let claims = await reply.json();
@@ -149,8 +150,8 @@ async function validate(r) {
         let my_access_token = r.variables.cookie_MY_ACCESS_TOKEN;
         if (!my_access_token) {
             r.log("OIDC validate: no access_token is found.");
-            if (r.variables.oidc_cert_header && r.headersIn[r.variables.oidc_cert_header]) {
-                let status = await validate_cert(r, r.headersIn[r.variables.oidc_cert_header]);
+            if (r.variables.OIDC_CERT_HEADER && r.headersIn[r.variables.OIDC_CERT_HEADER]) {
+                let status = await validate_cert(r, r.headersIn[r.variables.OIDC_CERT_HEADER]);
                 if (status == 200) {
                     r.return(status);
                     return;
@@ -169,6 +170,13 @@ async function validate(r) {
         if( claims && claims.payload && claims.payload.exp ) {
             if (claims.payload.exp < Math.floor(Date.now()/1000)) {
                 r.log("OIDC validate: token is expired: " + JSON.stringify(claims.payload));
+                if (r.variables.OIDC_CERT_HEADER && r.headersIn[r.variables.OIDC_CERT_HEADER]) {
+                    let status = await validate_cert(r, r.headersIn[r.variables.OIDC_CERT_HEADER]);
+                    if (status == 200) {
+                        r.return(status);
+                        return;
+                    }
+                }
                 let status = await refresh_token(r);
                 r.return(status);
             } else {
@@ -291,4 +299,4 @@ function postlogout(r) {
     r.internalRedirect(process.env.OIDC_POSTLOGOUT_CONTENT || "@bye");
 }
 
-export default {validate, login, logout, postlogin, postlogout, session}
+export default {validate, login, logout, postlogin, postlogout, session, validate_cert}
