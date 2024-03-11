@@ -105,7 +105,8 @@ async function validate_cert(r, pem_cert) {
             headers: { "X-Mtls-Clientcert": pem_cert }
         });
         if (!reply.ok) {
-            r.error(`OIDC validate_cert: the varidator returns error: ${await reply.text()}`);
+            const reply_text = await reply.text();
+            r.error(`OIDC validate_cert: the varidator returns error: ${reply_text}`);
             r.return(reply.status)
             return;
         }
