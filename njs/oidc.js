@@ -214,9 +214,9 @@ function login(r) {
     if (regex_top_page_url_pattern[pattern_index]) {
 
         if (regex_top_page_url_pattern[pattern_index].test(r.variables.request_uri)) {
-            r.log(`OIDC login: request uri match for OIDC_TOP_PAGE_URL_PATTERN:${process.env.OIDC_TOP_PAGE_URL_PATTERN} : ${r.variables.request_uri}`);
+            r.log(`OIDC login: request uri match for OIDC_TOP_PAGE_URL_PATTERN:${process.env[`OIDC_TOP_PAGE_URL_PATTERN${pattern_index}`]} : ${r.variables.request_uri}`);
         } else {
-            r.log(`OIDC login: request uri does not match for OIDC_TOP_PAGE_URL_PATTERN:${process.env.OIDC_TOP_PAGE_URL_PATTERN} : ${r.variables.request_uri}`);
+            r.log(`OIDC login: request uri does not match for OIDC_TOP_PAGE_URL_PATTERN:${process.envprocess.env[`OIDC_TOP_PAGE_URL_PATTERN${pattern_index}`]} : ${r.variables.request_uri}`);
             r.return(401);
             return;
         }
@@ -262,7 +262,7 @@ async function postlogin(r) {
             let session_claims = jwt.decode(tokens.refresh_token).payload;
             let expires = new Date(session_claims.exp * 1000).toUTCString();
             cookies.push(`OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`)
-            r.log(`OIDC postlogin: refresh token is found: Expires=${expires}Set-Cookie=${JSON.stringify(cookies)}`);
+            r.log(`OIDC postlogin: refresh token is found: Expires=${expires} Set-Cookie=${JSON.stringify(cookies)}`);
         }
         r.headersOut["Set-Cookie"] = cookies;
         r.return(302, scheme + "://" + r.variables.host + referer);
