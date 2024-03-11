@@ -216,7 +216,7 @@ function login(r) {
         if (regex_top_page_url_pattern[pattern_index].test(r.variables.request_uri)) {
             r.log(`OIDC login: request uri match for OIDC_TOP_PAGE_URL_PATTERN:${process.env[`OIDC_TOP_PAGE_URL_PATTERN${pattern_index}`]} : ${r.variables.request_uri}`);
         } else {
-            r.log(`OIDC login: request uri does not match for OIDC_TOP_PAGE_URL_PATTERN:${process.envprocess.env[`OIDC_TOP_PAGE_URL_PATTERN${pattern_index}`]} : ${r.variables.request_uri}`);
+            r.log(`OIDC login: request uri does not match for OIDC_TOP_PAGE_URL_PATTERN:${process.env[`OIDC_TOP_PAGE_URL_PATTERN${pattern_index}`]} : ${r.variables.request_uri}`);
             r.return(401);
             return;
         }
