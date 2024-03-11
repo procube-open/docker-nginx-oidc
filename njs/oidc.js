@@ -107,7 +107,6 @@ async function validate_cert(r, pem_cert) {
         if (!reply.ok) {
             const reply_text = await reply.text();
             r.error(`OIDC validate_cert: the varidator returns error(code = ${reply.status}): ${reply_text}`);
-            if ()
             r.return((reply.status >= 300 && reply.status < 400)? 500: reply.status)
             return;
         }
