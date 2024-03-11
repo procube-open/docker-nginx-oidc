@@ -43,3 +43,4 @@ RUN chmod +x /docker-entrypoint.d/70-fluentd.conf.sh
 COPY default.conf /etc/nginx/conf.d/
 
 ENV OIDC_COOKIE_OPTIONS "; Path=/; secure; httpOnly"
+ENV OIDC_STATIONAY_TOKEN_SPAN 600
