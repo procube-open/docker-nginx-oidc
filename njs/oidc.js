@@ -232,7 +232,7 @@ function login(r) {
         r.log(`OIDC login: OIDC_TOP_PAGE_URL_PATTERN${r.variables.regex_top_page_url_pattern_index} environment variable is not set`);
     }
     let postlogin_uri = scheme + "://" + r.variables.host + "/auth/postlogin";
-    let referer = r.variables.uri;
+    let referer = r.variables.request_uri;
     let params = {
         response_type: "code",
         scope: process.env.OIDC_SCOPE,
