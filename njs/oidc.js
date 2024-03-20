@@ -138,10 +138,10 @@ async function validate_cert(r, pem_cert) {
             r.headersOut["X-Remote-Group"] = claims[process.env['OIDC_GROUP_CLAIM']];
         }
         if (process.env['OIDC_ROLE1_CLAIM']) {
-            r.headersOut["X-Remote-Role1"] = new_claims[process.env['OIDC_ROLE1_CLAIM']];
+            r.headersOut["X-Remote-Role1"] = claims[process.env['OIDC_ROLE1_CLAIM']];
         }
         if (process.env['OIDC_ROLE2_CLAIM']) {
-            r.headersOut["X-Remote-Role2"] = new_claims[process.env['OIDC_ROLE2_CLAIM']];
+            r.headersOut["X-Remote-Role2"] = claims[process.env['OIDC_ROLE2_CLAIM']];
         }
         r.log(`OIDC validate_cert: succeeded: ${my_access_token}`);
     } catch (e) {
@@ -207,10 +207,10 @@ async function validate(r) {
                     r.headersOut["X-Remote-Group"] = claims.payload[process.env['OIDC_GROUP_CLAIM']]
                 }
                 if (process.env['OIDC_ROLE1_CLAIM']) {
-                    r.headersOut["X-Remote-Role1"] = new_claims[process.env['OIDC_ROLE1_CLAIM']];
+                    r.headersOut["X-Remote-Role1"] = claims[process.env['OIDC_ROLE1_CLAIM']];
                 }
                 if (process.env['OIDC_ROLE2_CLAIM']) {
-                    r.headersOut["X-Remote-Role2"] = new_claims[process.env['OIDC_ROLE2_CLAIM']];
+                    r.headersOut["X-Remote-Role2"] = claims[process.env['OIDC_ROLE2_CLAIM']];
                 }
                         r.return(200);
             }
