@@ -89,6 +89,12 @@ async function refresh_token(r) {
         if (process.env['OIDC_GROUP_CLAIM']) {
             r.headersOut["X-Remote-Group"] = new_claims[process.env['OIDC_GROUP_CLAIM']];
         }
+        if (process.env['OIDC_ROLE1_CLAIM']) {
+            r.headersOut["X-Remote-Role1"] = new_claims[process.env['OIDC_ROLE1_CLAIM']];
+        }
+        if (process.env['OIDC_ROLE2_CLAIM']) {
+            r.headersOut["X-Remote-Role2"] = new_claims[process.env['OIDC_ROLE2_CLAIM']];
+        }
         r.log(`OIDC refresh_token: succeeded: ${my_access_token}`);
     } catch (e) {
         r.error(`OIDC refresh_token: error: ${e.stack || e}`);
@@ -130,6 +136,12 @@ async function validate_cert(r, pem_cert) {
         }
         if (process.env['OIDC_GROUP_CLAIM']) {
             r.headersOut["X-Remote-Group"] = claims[process.env['OIDC_GROUP_CLAIM']];
+        }
+        if (process.env['OIDC_ROLE1_CLAIM']) {
+            r.headersOut["X-Remote-Role1"] = new_claims[process.env['OIDC_ROLE1_CLAIM']];
+        }
+        if (process.env['OIDC_ROLE2_CLAIM']) {
+            r.headersOut["X-Remote-Role2"] = new_claims[process.env['OIDC_ROLE2_CLAIM']];
         }
         r.log(`OIDC validate_cert: succeeded: ${my_access_token}`);
     } catch (e) {
@@ -194,7 +206,13 @@ async function validate(r) {
                 if (process.env['OIDC_GROUP_CLAIM']) {
                     r.headersOut["X-Remote-Group"] = claims.payload[process.env['OIDC_GROUP_CLAIM']]
                 }
-                r.return(200);
+                if (process.env['OIDC_ROLE1_CLAIM']) {
+                    r.headersOut["X-Remote-Role1"] = new_claims[process.env['OIDC_ROLE1_CLAIM']];
+                }
+                if (process.env['OIDC_ROLE2_CLAIM']) {
+                    r.headersOut["X-Remote-Role2"] = new_claims[process.env['OIDC_ROLE2_CLAIM']];
+                }
+                        r.return(200);
             }
         } else {
             r.log(`OIDC validate: fail to decode: ${my_access_token} craims:${JSON.stringify(claims)}`);

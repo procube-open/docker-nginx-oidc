@@ -70,6 +70,8 @@ http {
         '"req": "${connection}-${connection_requests}",'
         '"user": "$oidc_user",'
         '"group": "$oidc_group",'
+        '"role1": "$oidc_role1",'
+        '"role2": "$oidc_role2",'
         '"status": "$status",'
         '"protocol": "$server_protocol",'
         '"method": "$request_method",'
