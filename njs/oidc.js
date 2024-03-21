@@ -207,10 +207,10 @@ async function validate(r) {
                     r.headersOut["X-Remote-Group"] = claims.payload[process.env['OIDC_GROUP_CLAIM']]
                 }
                 if (process.env['OIDC_ROLE1_CLAIM']) {
-                    r.headersOut["X-Remote-Role1"] = claims[process.env['OIDC_ROLE1_CLAIM']];
+                    r.headersOut["X-Remote-Role1"] = claims.payload[process.env['OIDC_ROLE1_CLAIM']];
                 }
                 if (process.env['OIDC_ROLE2_CLAIM']) {
-                    r.headersOut["X-Remote-Role2"] = claims[process.env['OIDC_ROLE2_CLAIM']];
+                    r.headersOut["X-Remote-Role2"] = claims.payload[process.env['OIDC_ROLE2_CLAIM']];
                 }
                         r.return(200);
             }
