@@ -1,7 +1,7 @@
 import qs from "querystring";
 import jwt from "jwt.js";
 
-const scheme = (typeof process.env.OIDC_REDIRECT_SCHEME === 'undefined')? 'http': process.env.OIDC_REDIRECT_SCHEME;
+const scheme = (typeof process.env.OIDC_REDIRECT_SCHEME === 'undefined') ? 'http' : process.env.OIDC_REDIRECT_SCHEME;
 
 let regex_top_page_url_pattern = [null, null, null, null];
 
@@ -27,11 +27,11 @@ async function get_token(code, redirect_uri) {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: qs.stringify({
-            grant_type    : "authorization_code",
-            client_id     : process.env.OIDC_CLIENT_ID,
-            client_secret : process.env.OIDC_CLIENT_SECRET,
-            redirect_uri  : redirect_uri,
-            code          : code,
+            grant_type: "authorization_code",
+            client_id: process.env.OIDC_CLIENT_ID,
+            client_secret: process.env.OIDC_CLIENT_SECRET,
+            redirect_uri: redirect_uri,
+            code: code,
         }),
     });
     return await reply.json();
@@ -46,11 +46,11 @@ async function refresh_token(r) {
 
     // cookie expire shoud be same as JWT exp, but client-side clock cannot be trusted
     let claims = await jwt.decode(session);
-    if((!claims) || (!claims.payload) || (!claims.payload.exp)) {
+    if ((!claims) || (!claims.payload) || (!claims.payload.exp)) {
         r.error("OIDC validate: fail to decode JWT:" + session);
         return 401;
     }
-    if (claims.payload.exp < Math.floor(Date.now()/1000)) {
+    if (claims.payload.exp < Math.floor(Date.now() / 1000)) {
         r.log("OIDC validate: refresh token is expired: " + JSON.stringify(claims.payload));
         return 401;
     }
@@ -60,27 +60,27 @@ async function refresh_token(r) {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: qs.stringify({
-                grant_type    : "refresh_token",
-                client_id     : process.env.OIDC_CLIENT_ID,
-                client_secret : process.env.OIDC_CLIENT_SECRET,
-                refresh_token : session
+                grant_type: "refresh_token",
+                client_id: process.env.OIDC_CLIENT_ID,
+                client_secret: process.env.OIDC_CLIENT_SECRET,
+                refresh_token: session
             }),
         });
         let tokens = await reply.json();
         if (!tokens.access_token) {
             r.error(`refresh_token: fail to get access_token: ${JSON.stringify(tokens)}`);
-            return 401;            
+            return 401;
         }
         let new_claims = jwt.decode(tokens.access_token).payload;
 
         let secret_key = process.env.JWT_GEN_KEY;
         let my_access_token = await jwt.encode(new_claims, secret_key);
-    
-        r.headersOut["X-New-Access-Token-Cookie"] = `MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`    
+
+        r.headersOut["X-New-Access-Token-Cookie"] = `MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`
         if (tokens.refresh_token) {
             let session_claims = jwt.decode(tokens.refresh_token).payload;
             let expires = new Date(session_claims.exp * 1000).toUTCString();
-            r.headersOut["X-New-Session-Token-Cookie"] = `OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`    
+            r.headersOut["X-New-Session-Token-Cookie"] = `OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`
         }
         r.headersOut["X-Access-Token"] = my_access_token;
         if (process.env['OIDC_USER_CLAIM']) {
@@ -89,8 +89,14 @@ async function refresh_token(r) {
         if (process.env['OIDC_GROUP_CLAIM']) {
             r.headersOut["X-Remote-Group"] = new_claims[process.env['OIDC_GROUP_CLAIM']];
         }
+        if (process.env['OIDC_ROLE1_CLAIM']) {
+            r.headersOut["X-Remote-Role1"] = new_claims[process.env['OIDC_ROLE1_CLAIM']];
+        }
+        if (process.env['OIDC_ROLE2_CLAIM']) {
+            r.headersOut["X-Remote-Role2"] = new_claims[process.env['OIDC_ROLE2_CLAIM']];
+        }
         r.log(`OIDC refresh_token: succeeded: ${my_access_token}`);
-    }  catch (e) {
+    } catch (e) {
         r.error(`OIDC refresh_token: error: ${e.stack || e}`);
         return 401;
     }
@@ -105,23 +111,25 @@ async function validate_cert(r, pem_cert) {
             headers: { "X-Mtls-Clientcert": pem_cert }
         });
         if (!reply.ok) {
-            const reply_text = await reply.text();
+            let reply_text = "fail to parse reply"
+            try {
+                const reply_json = await reply.json();
+                r.log(reply_json.certificate);
+                reply_text = JSON.stringify(reply_json);
+            } catch (e) {
+                r.error(`OIDC validate_cert: Parse error for reply from ${process.env.OIDC_CLIENTCERT_VALIDATE_URL}: errr: ${e}`);
+            }
             r.error(`OIDC validate_cert: the varidator returns error(code = ${reply.status}): ${reply_text}`);
-            r.return((reply.status >= 300 && reply.status < 400)? 500: reply.status)
-            return;
+            return ((reply.status >= 300 && reply.status < 400) ? 500 : reply.status)
         }
         let claims = await reply.json();
+        r.log(`OIDC validate_cert: fetch succeeded: code = ${reply.status}, claims: ${JSON.stringify(claims)}`);
         claims.iat = Math.floor(Date.now() / 1000);
-        claims.exp = calims.iat + parseInt(process.env.OIDC_STATIONAY_TOKEN_SPAN);
+        claims.exp = claims.iat + parseInt(process.env.OIDC_STATIONAY_TOKEN_SPAN);
         let secret_key = process.env.JWT_GEN_KEY;
         let my_access_token = await jwt.encode(claims, secret_key);
-    
-        r.headersOut["X-New-Access-Token-Cookie"] = `MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`    
-        if (tokens.refresh_token) {
-            let session_claims = jwt.decode(tokens.refresh_token).payload;
-            let expires = new Date(session_claims.exp * 1000).toUTCString();
-            r.headersOut["X-New-Session-Token-Cookie"] = `OIDC_SESSION=${tokens.refresh_token};Expires=${expires}${process.env.OIDC_COOKIE_OPTIONS}`    
-        }
+
+        r.headersOut["X-New-Access-Token-Cookie"] = `MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`
         r.headersOut["X-Access-Token"] = my_access_token;
         if (process.env['OIDC_USER_CLAIM']) {
             r.headersOut["X-Remote-User"] = claims[process.env['OIDC_USER_CLAIM']];
@@ -129,12 +137,18 @@ async function validate_cert(r, pem_cert) {
         if (process.env['OIDC_GROUP_CLAIM']) {
             r.headersOut["X-Remote-Group"] = claims[process.env['OIDC_GROUP_CLAIM']];
         }
+        if (process.env['OIDC_ROLE1_CLAIM']) {
+            r.headersOut["X-Remote-Role1"] = claims[process.env['OIDC_ROLE1_CLAIM']];
+        }
+        if (process.env['OIDC_ROLE2_CLAIM']) {
+            r.headersOut["X-Remote-Role2"] = claims[process.env['OIDC_ROLE2_CLAIM']];
+        }
         r.log(`OIDC validate_cert: succeeded: ${my_access_token}`);
     } catch (e) {
         r.error(`OIDC validate_cert: fail to fetch ${process.env.OIDC_CLIENTCERT_VALIDATE_URL}: ${e.stack}`);
-        r.return(401);
+        return 401;
     }
-    return;
+    return 200;
 }
 
 async function validate(r) {
@@ -149,12 +163,18 @@ async function validate(r) {
         let my_access_token = r.variables.cookie_MY_ACCESS_TOKEN;
         if (!my_access_token) {
             r.log("OIDC validate: no access_token is found.");
-            if (r.variables.OIDC_CERT_HEADER && r.headersIn[r.variables.OIDC_CERT_HEADER]) {
-                let status = await validate_cert(r, r.headersIn[r.variables.OIDC_CERT_HEADER]);
-                if (status == 200) {
-                    r.return(status);
-                    return;
+            if (r.variables.OIDC_CERT_HEADER && r.variables.OIDC_CLIENTCERT_VALIDATE_URL) {
+                if (r.variables.OIDC_CERT_HEADER && r.headersIn[r.variables.OIDC_CERT_HEADER]) {
+                    let status = await validate_cert(r, r.headersIn[r.variables.OIDC_CERT_HEADER]);
+                    if (status == 200) {
+                        r.return(status);
+                        return;
+                    }
+                } else {
+                    r.log(`OIDC validate: no ${r.variables.OIDC_CERT_HEADER} header in request`)
                 }
+            } else {
+                r.log(`OIDC validate: not setup to validate cert: OIDC_CLIENTCERT_VALIDATE_URL=${r.variables.OIDC_CLIENTCERT_VALIDATE_URL}, OIDC_CERT_HEADER=${r.variables.OIDC_CERT_HEADER}`)
             }
             let status = await refresh_token(r);
             r.return(status);
@@ -166,8 +186,8 @@ async function validate(r) {
             return;
         }
         let claims = jwt.decode(my_access_token);
-        if( claims && claims.payload && claims.payload.exp ) {
-            if (claims.payload.exp < Math.floor(Date.now()/1000)) {
+        if (claims && claims.payload && claims.payload.exp) {
+            if (claims.payload.exp < Math.floor(Date.now() / 1000)) {
                 r.log("OIDC validate: token is expired: " + JSON.stringify(claims.payload));
                 if (r.variables.OIDC_CERT_HEADER && r.headersIn[r.variables.OIDC_CERT_HEADER]) {
                     let status = await validate_cert(r, r.headersIn[r.variables.OIDC_CERT_HEADER]);
@@ -186,13 +206,19 @@ async function validate(r) {
                 if (process.env['OIDC_GROUP_CLAIM']) {
                     r.headersOut["X-Remote-Group"] = claims.payload[process.env['OIDC_GROUP_CLAIM']]
                 }
-                r.return(200);
+                if (process.env['OIDC_ROLE1_CLAIM']) {
+                    r.headersOut["X-Remote-Role1"] = claims.payload[process.env['OIDC_ROLE1_CLAIM']];
+                }
+                if (process.env['OIDC_ROLE2_CLAIM']) {
+                    r.headersOut["X-Remote-Role2"] = claims.payload[process.env['OIDC_ROLE2_CLAIM']];
+                }
+                        r.return(200);
             }
         } else {
             r.log(`OIDC validate: fail to decode: ${my_access_token} craims:${JSON.stringify(claims)}`);
             r.return(401);
-        }    
-    }  catch (e) {
+        }
+    } catch (e) {
         r.error(`OIDC validate: error: ${e.stack || e}`);
         r.return(401);
     }
@@ -210,7 +236,7 @@ function login(r) {
         r.return(401);
         return;
     }
-    const pattern_index = Number(r.variables.regex_top_page_url_pattern_index　 || "0")
+    const pattern_index = Number(r.variables.regex_top_page_url_pattern_index || "0")
     if (regex_top_page_url_pattern[pattern_index]) {
 
         if (regex_top_page_url_pattern[pattern_index].test(r.variables.request_uri)) {
@@ -224,12 +250,12 @@ function login(r) {
         r.log(`OIDC login: OIDC_TOP_PAGE_URL_PATTERN${r.variables.regex_top_page_url_pattern_index} environment variable is not set`);
     }
     let postlogin_uri = scheme + "://" + r.variables.host + "/auth/postlogin";
-    let referer = r.variables.uri;
+    let referer = r.variables.request_uri;
     let params = {
-        response_type : "code",
-        scope         : process.env.OIDC_SCOPE,
-        client_id     : process.env.OIDC_CLIENT_ID,
-        redirect_uri  : postlogin_uri + "?" + qs.stringify({p: referer}),
+        response_type: "code",
+        scope: process.env.OIDC_SCOPE,
+        client_id: process.env.OIDC_CLIENT_ID,
+        redirect_uri: postlogin_uri + "?" + qs.stringify({ p: referer }),
     };
     if (r.variables.oidc_acr) {
         params["acr_values"] = r.variables.oidc_acr.split(' ')
@@ -248,7 +274,7 @@ async function postlogin(r) {
         let referer = r.args.p;
         let postlogin_uri = `${scheme}://${r.variables.host}/auth/postlogin`;
 
-        let redirect_uri = postlogin_uri + "?" + qs.stringify({p: referer});
+        let redirect_uri = postlogin_uri + "?" + qs.stringify({ p: referer });
         let tokens = await get_token(r.args.code, redirect_uri);
         r.log("OIDC postlogin: tokens: " + JSON.stringify(tokens));
 
@@ -266,7 +292,7 @@ async function postlogin(r) {
         }
         r.headersOut["Set-Cookie"] = cookies;
         r.return(302, scheme + "://" + r.variables.host + referer);
-    }  catch (e) {
+    } catch (e) {
         r.error(`OIDC postlogin: error: ${e.stack || e}`);
         r.return(403);  // Forbidden
     }
@@ -275,8 +301,8 @@ async function postlogin(r) {
 function logout(r) {
     let postlogout_uri = `${scheme}://${r.variables.host}/auth/postlogout`;
     let params = qs.stringify({
-        client_id : process.env.OIDC_CLIENT_ID,
-        post_logout_redirect_uri : postlogout_uri,
+        client_id: process.env.OIDC_CLIENT_ID,
+        post_logout_redirect_uri: postlogout_uri,
     });
     let url = process.env.OIDC_LOGOUT_ENDPOINT + "?" + params;
     r.return(302, url);
@@ -298,4 +324,4 @@ function postlogout(r) {
     r.internalRedirect(process.env.OIDC_POSTLOGOUT_CONTENT || "@bye");
 }
 
-export default {validate, login, logout, postlogin, postlogout, session, validate_cert}
+export default { validate, login, logout, postlogin, postlogout, session, validate_cert }
