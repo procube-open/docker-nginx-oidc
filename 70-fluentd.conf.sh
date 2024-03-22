@@ -26,8 +26,11 @@ stdout_logfile_maxbytes=0
 stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
 autorestart=true
-user=_fluentd
+user=nginx
 EOF
+
+mkdir -p /var/log/fluent
+chown nginx:nginx /var/log/fluent
 
 mkdir -p /etc/fluent/conf.d
 
