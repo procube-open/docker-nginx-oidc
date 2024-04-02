@@ -88,3 +88,67 @@ http {
     include /etc/nginx/conf.d/*.conf;
 }
 EOF
+
+if [ -n "${OIDC_REDIRECT_SCHEME}" ]; then
+    echo "env OIDC_REDIRECT_SCHEME=${OIDC_REDIRECT_SCHEME};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_TOP_PAGE_URL_PATTERN0}" ]; then
+    echo "env OIDC_TOP_PAGE_URL_PATTERN0=${OIDC_TOP_PAGE_URL_PATTERN0};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_TOP_PAGE_URL_PATTERN1}" ]; then
+    echo "env OIDC_TOP_PAGE_URL_PATTERN1=${OIDC_TOP_PAGE_URL_PATTERN1};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_TOP_PAGE_URL_PATTERN2}" ]; then
+    echo "env OIDC_TOP_PAGE_URL_PATTERN2=${OIDC_TOP_PAGE_URL_PATTERN2};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_TOP_PAGE_URL_PATTERN3}" ]; then
+    echo "env OIDC_TOP_PAGE_URL_PATTERN3=${OIDC_TOP_PAGE_URL_PATTERN3};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_TOKEN_ENDPOINT}" ]; then
+    echo "env OIDC_TOKEN_ENDPOINT=${OIDC_TOKEN_ENDPOINT};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_CLIENT_ID}" ]; then
+    echo "env OIDC_CLIENT_ID=${OIDC_CLIENT_ID};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_CLIENT_SECRET}" ]; then
+    echo "env OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${JWT_GEN_KEY}" ]; then
+    echo "env JWT_GEN_KEY=${JWT_GEN_KEY};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_COOKIE_OPTIONS}" ]; then
+    echo "env OIDC_COOKIE_OPTIONS=${OIDC_COOKIE_OPTIONS};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_USER_CLAIM}" ]; then
+    echo "env OIDC_USER_CLAIM=${OIDC_USER_CLAIM};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_GROUP_CLAIM}" ]; then
+    echo "env OIDC_GROUP_CLAIM=${OIDC_GROUP_CLAIM};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_ROLE1_CLAIM}" ]; then
+    echo "env OIDC_ROLE1_CLAIM=${OIDC_ROLE1_CLAIM};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_ROLE2_CLAIM}" ]; then
+    echo "env OIDC_ROLE2_CLAIM=${OIDC_ROLE2_CLAIM};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_CLIENTCERT_VALIDATE_URL}" ]; then
+    echo "env OIDC_CLIENTCERT_VALIDATE_URL=${OIDC_CLIENTCERT_VALIDATE_URL};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_STATIONAY_TOKEN_SPAN}" ]; then
+    echo "env OIDC_STATIONAY_TOKEN_SPAN=${OIDC_STATIONAY_TOKEN_SPAN};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_SCOPE}" ]; then
+    echo "env OIDC_SCOPE=${OIDC_SCOPE};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_CLIENT_ID}" ]; then
+    echo "env OIDC_CLIENT_ID=${OIDC_CLIENT_ID};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_AUTH_ENDPOINT}" ]; then
+    echo "env OIDC_AUTH_ENDPOINT=${OIDC_AUTH_ENDPOINT};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_LOGOUT_ENDPOINT}" ]; then
+    echo "env OIDC_LOGOUT_ENDPOINT=${OIDC_LOGOUT_ENDPOINT};" >> /etc/nginx/conf.d/envs.conf
+fi
+if [ -n "${OIDC_POSTLOGOUT_CONTENT}" ]; then
+    echo "env OIDC_POSTLOGOUT_CONTENT=${OIDC_POSTLOGOUT_CONTENT};" >> /etc/nginx/conf.d/envs.conf
+fi
