@@ -163,7 +163,7 @@ async function validate(r) {
         let my_access_token = r.variables.cookie_MY_ACCESS_TOKEN;
         if (!my_access_token) {
             r.log("OIDC validate: no access_token is found.");
-            if (r.variables.OIDC_CERT_HEADER && r.variables.OIDC_CLIENTCERT_VALIDATE_URL) {
+            if (r.variables.OIDC_CERT_HEADER && process.env.OIDC_CLIENTCERT_VALIDATE_URL) {
                 if (r.variables.OIDC_CERT_HEADER && r.headersIn[r.variables.OIDC_CERT_HEADER]) {
                     let status = await validate_cert(r, r.headersIn[r.variables.OIDC_CERT_HEADER]);
                     if (status == 200) {
@@ -174,7 +174,7 @@ async function validate(r) {
                     r.log(`OIDC validate: no ${r.variables.OIDC_CERT_HEADER} header in request`)
                 }
             } else {
-                r.log(`OIDC validate: not setup to validate cert: OIDC_CLIENTCERT_VALIDATE_URL=${r.variables.OIDC_CLIENTCERT_VALIDATE_URL}, OIDC_CERT_HEADER=${r.variables.OIDC_CERT_HEADER}`)
+                r.log(`OIDC validate: not setup to validate cert: OIDC_CLIENTCERT_VALIDATE_URL=${process.env.OIDC_CLIENTCERT_VALIDATE_URL}, OIDC_CERT_HEADER=${r.variables.OIDC_CERT_HEADER}`)
             }
             let status = await refresh_token(r);
             r.return(status);
