@@ -21,7 +21,7 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 |OIDC_ROLE1_CLAIM|claim名を指定するとアクセストークンのその claim の値を role1 属性としてログに出力する|userrole1|
 |OIDC_ROLE2_CLAIM|claim名を指定するとアクセストークンのその claim の値を role2 属性としてログに出力する|userrole2|
 |OIDC_TOP_PAGE_URL_PATTERN[0-3]|URLのpバスが指定されたパターンにマッチしない場合はAPI呼び出しとみなして、IdPへのリダイレクトを行わずに 401 を返す。nginx のの変数 $regex_top_page_url_pattern_index　に1,2,3の値を指定すると末尾の文字が一致する環境変数が使用される。デフォルトでは０が使用される|(^/$$\|^/app/.*)|
-|JWT_GEN_KEY| JWT 署名鍵 | "Your Secrets(must be replaced)"|
+|OIDC_JWT_GEN_KEY| JWT 署名鍵 | "Your Secrets(must be replaced)"|
 |NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE|ワーカプロセス数を自動的に調整する|"true"|
 |NGINX_ENTRYPOINT_LOCAL_RESOLVERS|/etc/resolv.confに指定されているIPアドレスを環境変数 NGINX_LOCAL_RESOLVERS に展開する|"true"|
 |NGINX_LOCAL_RESOLVERS|nginx の resolver ディレクティブに指定する値（NGINX_ENTRYPOINT_LOCAL_RESOLVERSがfalse の場合は必ず指定しなければならない|
