@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # vim:sw=4:ts=4:et
 
 set -e
@@ -88,3 +88,5 @@ http {
     include /etc/nginx/conf.d/*.conf;
 }
 EOF
+
+env | sed -n '/^OIDC_/s/\([^=]*\)=.*$/env \1;/p' >> /etc/nginx/nginx.conf

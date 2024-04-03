@@ -73,7 +73,7 @@ async function refresh_token(r) {
         }
         let new_claims = jwt.decode(tokens.access_token).payload;
 
-        let secret_key = process.env.JWT_GEN_KEY;
+        let secret_key = process.env.OIDC_JWT_GEN_KEY;
         let my_access_token = await jwt.encode(new_claims, secret_key);
 
         r.headersOut["X-New-Access-Token-Cookie"] = `MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`
@@ -126,7 +126,7 @@ async function validate_cert(r, pem_cert) {
         r.log(`OIDC validate_cert: fetch succeeded: code = ${reply.status}, claims: ${JSON.stringify(claims)}`);
         claims.iat = Math.floor(Date.now() / 1000);
         claims.exp = claims.iat + parseInt(process.env.OIDC_STATIONAY_TOKEN_SPAN);
-        let secret_key = process.env.JWT_GEN_KEY;
+        let secret_key = process.env.OIDC_JWT_GEN_KEY;
         let my_access_token = await jwt.encode(claims, secret_key);
 
         r.headersOut["X-New-Access-Token-Cookie"] = `MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`
@@ -159,7 +159,7 @@ async function validate(r) {
         r.headersOut["X-Access-Token"] = "OIDC:NoAccessToken"
         r.headersOut["X-Remote-User"] = "OIDC:UnknownUser"
         r.headersOut["X-Remote-Group"] = "OIDC:UnknownGroup"
-        let secret_key = process.env.JWT_GEN_KEY;
+        let secret_key = process.env.OIDC_JWT_GEN_KEY;
         let my_access_token = r.variables.cookie_MY_ACCESS_TOKEN;
         if (!my_access_token) {
             r.log("OIDC validate: no access_token is found.");
@@ -280,7 +280,7 @@ async function postlogin(r) {
 
         let claims = jwt.decode(tokens.access_token).payload;
 
-        let secret_key = process.env.JWT_GEN_KEY;
+        let secret_key = process.env.OIDC_JWT_GEN_KEY;
         let my_access_token = await jwt.encode(claims, secret_key);
 
         let cookies = [`MY_ACCESS_TOKEN=${my_access_token}${process.env.OIDC_COOKIE_OPTIONS}`];
