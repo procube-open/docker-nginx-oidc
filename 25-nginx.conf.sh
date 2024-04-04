@@ -67,6 +67,7 @@ http {
 
     log_format json escape=json '{"time": "$time_iso8601",'
         '"vhost": "$host",'
+        '"xff": "$http_x_forwarded_for",'
         '"req": "${connection}-${connection_requests}",'
         '"user": "$oidc_user",'
         '"group": "$oidc_group",'
