@@ -145,7 +145,7 @@ async function validate_cert(r, pem_cert) {
         }
         r.log(`OIDC validate_cert: succeeded: ${my_access_token}`);
     } catch (e) {
-        r.error(`OIDC validate_cert: fail to fetch ${process.env.OIDC_CLIENTCERT_VALIDATE_URL}: ${e.stack}`);
+        r.error(`OIDC validate_cert: fail to fetch ${process.env.OIDC_CLIENTCERT_VALIDATE_URL}: ${e.stack || e}`);
         return 401;
     }
     return 200;
@@ -164,7 +164,7 @@ async function validate(r) {
         if (!my_access_token) {
             r.log("OIDC validate: no access_token is found.");
             if (r.variables.OIDC_CERT_HEADER && process.env.OIDC_CLIENTCERT_VALIDATE_URL) {
-                if (r.variables.OIDC_CERT_HEADER && r.headersIn[r.variables.OIDC_CERT_HEADER]) {
+                if (r.headersIn[r.variables.OIDC_CERT_HEADER]) {
                     let status = await validate_cert(r, r.headersIn[r.variables.OIDC_CERT_HEADER]);
                     if (status == 200) {
                         r.return(status);
@@ -189,12 +189,18 @@ async function validate(r) {
         if (claims && claims.payload && claims.payload.exp) {
             if (claims.payload.exp < Math.floor(Date.now() / 1000)) {
                 r.log("OIDC validate: token is expired: " + JSON.stringify(claims.payload));
-                if (r.variables.OIDC_CERT_HEADER && r.headersIn[r.variables.OIDC_CERT_HEADER]) {
-                    let status = await validate_cert(r, r.headersIn[r.variables.OIDC_CERT_HEADER]);
-                    if (status == 200) {
-                        r.return(status);
-                        return;
+                if (r.variables.OIDC_CERT_HEADER && process.env.OIDC_CLIENTCERT_VALIDATE_URL) {
+                    if (r.headersIn[r.variables.OIDC_CERT_HEADER]) {
+                        let status = await validate_cert(r, r.headersIn[r.variables.OIDC_CERT_HEADER]);
+                        if (status == 200) {
+                            r.return(status);
+                            return;
+                        }
+                    } else {
+                        r.log(`OIDC validate: no ${r.variables.OIDC_CERT_HEADER} header in request`)
                     }
+                } else {
+                    r.log(`OIDC validate: not setup to validate cert: OIDC_CLIENTCERT_VALIDATE_URL=${process.env.OIDC_CLIENTCERT_VALIDATE_URL}, OIDC_CERT_HEADER=${r.variables.OIDC_CERT_HEADER}`)
                 }
                 let status = await refresh_token(r);
                 r.return(status);
@@ -232,7 +238,7 @@ async function session(r) {
 
 function login(r) {
     if (r.variables.request_method != 'GET') {
-        r.log(`OIDC validate: request method is not GET: method=${r.variables.request_method}`);
+        r.log(`OIDC login: request method is not GET: method=${r.variables.request_method}`);
         r.return(401);
         return;
     }
