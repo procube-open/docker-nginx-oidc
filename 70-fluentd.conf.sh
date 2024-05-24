@@ -66,7 +66,7 @@ cat > /etc/fluent/fluentd.conf << __EOF
 <match access.*>
   @type mongo
   host ${LOGDB_HOST}
-  port 27017
+  port ${LOGDB_PORT}
   database fluentd
   collection access
 
@@ -85,7 +85,7 @@ cat > /etc/fluent/fluentd.conf << __EOF
 </match>
 __EOF
 
-mongosh "mongodb://${LOGDB_HOST}" -u "${LOGDB_ROOT_USER}" -p "${LOGDB_ROOT_PASSWORD}" << __EOF
+mongosh "mongodb://${LOGDB_HOST}:${LOGDB_PORT}" -u "${LOGDB_ROOT_USER}" -p "${LOGDB_ROOT_PASSWORD}" << __EOF
 use fluentd;
 if (db.getUser("${LOGDB_USER}") == null) {  
   db.createUser(

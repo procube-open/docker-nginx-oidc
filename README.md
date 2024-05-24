@@ -28,6 +28,7 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 |NGINX_CONFIGURE_FLUENTD|fluentd を組み込む場合 true を指定する|"true"|
 |NGINX_LOG_LEVEL|nginx のログレベルを指定した値に設定する|debug|
 |LOGDB_HOST|ログDBのホスト名|authz-db|
+|LOGDB_PORT|ログDBのポート番号|27017|
 |LOGDB_USERNAME|ログDBにアクセスするユーザ|fluentd|
 |LOGDB_PASSWORD|ログDBにアクセス際のパスワード|fluentd|
 
