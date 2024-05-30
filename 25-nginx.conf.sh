@@ -76,7 +76,6 @@ http {
         '"protocol": "$server_protocol",'
         '"method": "$request_method",'
         '"path": "$request_uri",'
-        '"req": "$request",'
         '"size": "$body_bytes_sent",'
         '"reqtime": "$request_time",'
         '"ua": "$http_user_agent",'
