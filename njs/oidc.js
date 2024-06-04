@@ -218,7 +218,7 @@ async function validate(r) {
                 if (process.env['OIDC_ROLE2_CLAIM']) {
                     r.headersOut["X-Remote-Role2"] = claims.payload[process.env['OIDC_ROLE2_CLAIM']];
                 }
-                        r.return(200);
+                r.return(200);
             }
         } else {
             r.log(`OIDC validate: fail to decode: ${my_access_token} craims:${JSON.stringify(claims)}`);
