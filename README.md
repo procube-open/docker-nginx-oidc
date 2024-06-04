@@ -31,6 +31,7 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 |LOGDB_PORT|ログDBのポート番号|27017|
 |LOGDB_USERNAME|ログDBにアクセスするユーザ|fluentd|
 |LOGDB_PASSWORD|ログDBにアクセス際のパスワード|fluentd|
+|LOGDB_CAPPED_SIZE|ログ用の Capped Collection のサイズ（単位MByte, デフォルト 1024）|1024|
 
 
 ## td-agent(fluentd)

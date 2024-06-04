@@ -59,6 +59,8 @@ done
 
 entrypoint_log "$ME: info: put fluentd configuration for mongodb."
 
+LOGDB_CAPPED_SIZE=${LOGDB_CAPPED_SIZE:-1024}
+
 cat > /etc/fluent/fluentd.conf << __EOF
 @include /etc/fluent/conf.d/*.conf
 
@@ -72,7 +74,7 @@ cat > /etc/fluent/fluentd.conf << __EOF
 
   # for capped collection
   capped
-  capped_size 1024m
+  capped_size ${LOGDB_CAPPED_SIZE}m
 
   # authentication
   user ${LOGDB_USER}
