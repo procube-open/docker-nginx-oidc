@@ -59,6 +59,8 @@ done
 
 entrypoint_log "$ME: info: put fluentd configuration for mongodb."
 
+LOGDB_CAPPED_SIZE=${LOGDB_CAPPED_SIZE:-1024}
+
 cat > /etc/fluent/fluentd.conf << __EOF
 @include /etc/fluent/conf.d/*.conf
 
@@ -66,13 +68,13 @@ cat > /etc/fluent/fluentd.conf << __EOF
 <match access.*>
   @type mongo
   host ${LOGDB_HOST}
-  port 27017
+  port ${LOGDB_PORT}
   database fluentd
   collection access
 
   # for capped collection
   capped
-  capped_size 1024m
+  capped_size ${LOGDB_CAPPED_SIZE}m
 
   # authentication
   user ${LOGDB_USER}
@@ -85,7 +87,7 @@ cat > /etc/fluent/fluentd.conf << __EOF
 </match>
 __EOF
 
-mongosh "mongodb://${LOGDB_HOST}" -u "${LOGDB_ROOT_USER}" -p "${LOGDB_ROOT_PASSWORD}" << __EOF
+mongosh "mongodb://${LOGDB_HOST}:${LOGDB_PORT}" -u "${LOGDB_ROOT_USER}" -p "${LOGDB_ROOT_PASSWORD}" << __EOF
 use fluentd;
 if (db.getUser("${LOGDB_USER}") == null) {  
   db.createUser(

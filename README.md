@@ -28,8 +28,10 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 |NGINX_CONFIGURE_FLUENTD|fluentd を組み込む場合 true を指定する|"true"|
 |NGINX_LOG_LEVEL|nginx のログレベルを指定した値に設定する|debug|
 |LOGDB_HOST|ログDBのホスト名|authz-db|
+|LOGDB_PORT|ログDBのポート番号|27017|
 |LOGDB_USERNAME|ログDBにアクセスするユーザ|fluentd|
 |LOGDB_PASSWORD|ログDBにアクセス際のパスワード|fluentd|
+|LOGDB_CAPPED_SIZE|ログ用の Capped Collection のサイズ（単位MByte, デフォルト 1024）|1024|
 
 
 ## td-agent(fluentd)
@@ -113,6 +115,30 @@ OpenID Connect の RP として動作するための location を設定する。
 # TAG: idp
 access_log /var/log/nginx/access.idp.log json;
 ```
+
+ログの項目は以下の通り。
+
+|項目名|意味|値の例|
+|:----|:----|:----|
+|time |アクセスした日時|2024-05-21T00:33:30+09:00|
+|vhost |アクセスしたホスト名|procube.jp|
+|xff |アクセス元グローバルIP|112.78.125.94|
+|user |アクセスしたユーザのID|test-admin|
+|group |アクセスしたユーザのグループ|developers|
+|role1|アクセスしたユーザのロール1|IDM_ACCOUNT_MANAGER|
+|role2|アクセスしたユーザのロール2|VIEWER|
+|status |クライアントに返されたHTTPステータスコード|200|
+|protocol |HTTPリクエストのプロトコル|HTTP/1.1|
+|method |HTTPリクエストのメソッド| GET|
+|path |HTTPリクエストのパス| /|
+|size |HTTPレスポンスのサイズ|5731|
+|reqtime |レスポンスを返すまでにかかった時間(ms)|0.030|
+|ua |ユーザエージェントの値|Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML|
+|origin |アクセスしたアプリケーションのロード元|upstreamaddr |アップストリームのアドレス|10.12.21.248:80|
+|upstreamtime |アプストリームで消費した時間|0.028|
+|upstreamstatus |アップストリームから返されたHTTPステータスコード|200|
+|referrer |リファラ|https://procube.jp/dummy/|
+
 
 ## エラーログ
 
