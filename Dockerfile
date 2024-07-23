@@ -35,6 +35,7 @@ RUN apt install -y sudo make gcc && \
     apt update && apt install -y mongodb-mongosh
 ENV GEM_HOME /opt/fluent/lib/ruby/gems/3.2.0/
 ENV PATH="/opt/fluent/bin:${PATH}"
+RUN gem update fluentd
 RUN /opt/fluent/lib/ruby/gems/3.2.0/bin/fluent-gem install fluent-plugin-mongo
 COPY 70-fluentd.conf.sh /docker-entrypoint.d/
 RUN chmod +x /docker-entrypoint.d/70-fluentd.conf.sh
