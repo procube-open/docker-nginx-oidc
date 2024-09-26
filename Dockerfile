@@ -44,12 +44,10 @@ RUN set -x \
     && cd pkg-oss-${REVISION} \
     && cd debian \
     && sed -i 's/BASE_CONFIGURE_ARGS=\\/BASE_CONFIGURE_ARGS=--add-module='$(echo $tempDir | sed 's/\//\\\//g')'\/ngx_upstream_jdomain-'${UPSTREAM_JDOMAIN_VERSION}' \\/' Makefile \
-    && for target in base module-geoip module-image-filter module-njs module-xslt; do \
-        make rules-$target; \
-        mk-build-deps --install --tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes" \
-            debuild-$target/nginx-$NGINX_VERSION/debian/control; \
-    done \
-    && make base module-geoip module-image-filter module-njs module-xslt \
+    && make rules-base \
+    && mk-build-deps --install --tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes" \
+            debuild-base/nginx-$NGINX_VERSION/debian/control \
+    && make base \
 ) \
 # we don't remove APT lists here because they get re-downloaded and removed later
 \
@@ -70,16 +68,16 @@ RUN set -x \
 && apt-get -o Acquire::GzipIndexes=false update \
 \
 && apt-get install --no-install-recommends --no-install-suggests -y \
-            $nginxPackages \
+            nginx \
             gettext-base \
             curl \
-&& apt-get remove --purge --auto-remove -y && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx.list \
-\
+&& apt-get remove --purge --auto-remove -y && rm -rf /var/lib/apt/lists/* /etc/apt/sources.list.d/nginx.list
+
 # if we have leftovers from building, let's purge them (including extra, unnecessary build deps)
-&& if [ -n "$tempDir" ]; then \
-apt-get purge -y --auto-remove \
-&& rm -rf "$tempDir" /etc/apt/sources.list.d/temp.list; \
-fi
+# && if [ -n "$tempDir" ]; then \
+# apt-get purge -y --auto-remove \
+# && rm -rf "$tempDir" /etc/apt/sources.list.d/temp.list; \
+# fi
 
 RUN apt update && apt install -y supervisor cron logrotate
 
