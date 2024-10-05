@@ -3,7 +3,9 @@ FROM nginx:1.25
 # Build nginx code copied from official nginx Dockerfile
 # https://github.com/nginxinc/docker-nginx/blob/master/stable/debian/Dockerfile
 # to add ngx_upstream_jdomain module
-env UPSTREAM_JDOMAIN_VERSION 1.5.0
+ENV UPSTREAM_JDOMAIN_VERSION 1.5.0
+
+COPY fail_timeout_20.patch /tmp/
 
 RUN set -x \
 # we're on an architecture upstream doesn't officially build for
@@ -30,6 +32,7 @@ RUN set -x \
     cd "$tempDir" \
     && curl -f -L -o ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION}.tar.gz https://github.com/nicholaschiasson/ngx_upstream_jdomain/archive/refs/tags/${UPSTREAM_JDOMAIN_VERSION}.tar.gz \
     && tar xzvf ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION}.tar.gz \
+    && (cd ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION} && patch -p1 < /tmp/fail_timeout_20.patch) \
     && REVISION="${NGINX_VERSION}-${PKG_RELEASE}" \
     && REVISION=${REVISION%~*} \
     && curl -f -L -O https://github.com/nginx/pkg-oss/archive/${REVISION}.tar.gz \
