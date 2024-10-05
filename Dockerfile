@@ -3,7 +3,7 @@ FROM nginx:1.25
 # Build nginx code copied from official nginx Dockerfile
 # https://github.com/nginxinc/docker-nginx/blob/master/stable/debian/Dockerfile
 # to add ngx_upstream_jdomain module
-ENV UPSTREAM_JDOMAIN_VERSION 1.5.0
+ENV UPSTREAM_JDOMAIN_VERSION=1.5.0
 
 COPY fail_timeout_20.patch /tmp/
 
@@ -115,7 +115,7 @@ RUN apt install -y sudo make gcc && \
     curl -L https://www.mongodb.org/static/pgp/server-7.0.asc -o /etc/apt/trusted.gpg.d/server-7.0.asc  && \
     echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" > /etc/apt/sources.list.d/mongodb-org-7.0.list && \
     apt update && apt install -y mongodb-mongosh
-ENV GEM_HOME /opt/fluent/lib/ruby/gems/3.2.0/
+ENV GEM_HOME=/opt/fluent/lib/ruby/gems/3.2.0/
 ENV PATH="/opt/fluent/bin:${PATH}"
 RUN gem update fluentd
 RUN /opt/fluent/lib/ruby/gems/3.2.0/bin/fluent-gem install fluent-plugin-mongo
@@ -125,5 +125,5 @@ RUN chmod +x /docker-entrypoint.d/70-fluentd.conf.sh
 # Return 400 default
 COPY default.conf /etc/nginx/conf.d/
 
-ENV OIDC_COOKIE_OPTIONS "; Path=/; secure; httpOnly"
-ENV OIDC_STATIONAY_TOKEN_SPAN 600
+ENV OIDC_COOKIE_OPTIONS="; Path=/; secure; httpOnly"
+ENV OIDC_STATIONAY_TOKEN_SPAN=600
