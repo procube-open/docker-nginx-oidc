@@ -4,7 +4,7 @@ FROM nginx:1.25
 # https://github.com/nginxinc/docker-nginx/blob/master/stable/debian/Dockerfile
 # to add ngx_upstream_jdomain module
 # ENV UPSTREAM_JDOMAIN_VERSION=1.5.0
-ENV UPSTREAM_JDOMAIN_VERSION=master
+ENV UPSTREAM_JDOMAIN_VERSION=Fix-entry-overwritten
 
 COPY fail_timeout_30.patch /tmp/
 
