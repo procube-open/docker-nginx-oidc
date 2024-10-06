@@ -3,9 +3,10 @@ FROM nginx:1.25
 # Build nginx code copied from official nginx Dockerfile
 # https://github.com/nginxinc/docker-nginx/blob/master/stable/debian/Dockerfile
 # to add ngx_upstream_jdomain module
-ENV UPSTREAM_JDOMAIN_VERSION=1.5.0
+# ENV UPSTREAM_JDOMAIN_VERSION=1.5.0
+ENV UPSTREAM_JDOMAIN_VERSION=master
 
-COPY fail_timeout_20.patch /tmp/
+COPY fail_timeout_30.patch /tmp/
 
 RUN set -x \
 # we're on an architecture upstream doesn't officially build for
@@ -25,14 +26,15 @@ RUN set -x \
     devscripts \
     equivs \
     git \
+    unzip \
     libxml2-utils \
     lsb-release \
     xsltproc \
 && ( \
     cd "$tempDir" \
-    && curl -f -L -o ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION}.tar.gz https://github.com/nicholaschiasson/ngx_upstream_jdomain/archive/refs/tags/${UPSTREAM_JDOMAIN_VERSION}.tar.gz \
-    && tar xzvf ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION}.tar.gz \
-    && (cd ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION} && patch -p1 < /tmp/fail_timeout_20.patch) \
+    && curl -f -L -o ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION}.zip https://github.com/procube-sandbox/ngx_upstream_jdomain/archive/refs/heads/${UPSTREAM_JDOMAIN_VERSION}.zip \
+    && unzip ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION}.zip \
+    && (cd ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION} && patch -p1 < /tmp/fail_timeout_30.patch) \
     && REVISION="${NGINX_VERSION}-${PKG_RELEASE}" \
     && REVISION=${REVISION%~*} \
     && curl -f -L -O https://github.com/nginx/pkg-oss/archive/${REVISION}.tar.gz \
