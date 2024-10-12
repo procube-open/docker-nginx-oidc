@@ -10,6 +10,8 @@ entrypoint_log() {
     fi
 }
 
+export NGINX_WORKER_PROCESSES=${NGINX_WORKER_PROCESSES:-1}
+export NGINX_WORKER_SHUTDOWN_TIMEOUT=${NGINX_WORKER_SHUTDOWN_TIMEOUT:-20s}
 export NGINX_LOG_LEVEL=${NGINX_LOG_LEVEL:-notice}
 export NGINX_RESOLVER_LINE=""
 if [ -n "${NGINX_LOCAL_RESOLVERS}" ]; then
@@ -21,7 +23,8 @@ entrypoint_log "$ME: info: put /etc/nginx/nginx.conf."
 envsubst '${ME} ${NGINX_LOG_LEVEL} ${NGINX_RESOLVER_LINE}' > /etc/nginx/nginx.conf << 'EOF'
 # This file generated from /docker-entrypoint.d/${ME}
 user  nginx;
-worker_processes  auto;
+worker_processes  ${NGINX_WORKER_PROCESSES};
+worker_shutdown_timeout ${NGINX_WORKER_SHUTDOWN_TIMEOUT};
 
 error_log /dev/stdout ${NGINX_LOG_LEVEL};
 pid        /var/run/nginx.pid;
