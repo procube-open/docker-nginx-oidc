@@ -20,7 +20,7 @@ fi
 
 entrypoint_log "$ME: info: put /etc/nginx/nginx.conf."
 
-envsubst '${ME} ${NGINX_LOG_LEVEL} ${NGINX_RESOLVER_LINE}' > /etc/nginx/nginx.conf << 'EOF'
+envsubst '${ME} ${NGINX_LOG_LEVEL} ${NGINX_RESOLVER_LINE} ${NGINX_WORKER_PROCESSES} ${NGINX_WORKER_SHUTDOWN_TIMEOUT}' > /etc/nginx/nginx.conf << 'EOF'
 # This file generated from /docker-entrypoint.d/${ME}
 user  nginx;
 worker_processes ${NGINX_WORKER_PROCESSES};
