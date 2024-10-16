@@ -27,6 +27,8 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 |NGINX_LOCAL_RESOLVERS|nginx の resolver ディレクティブに指定する値（NGINX_ENTRYPOINT_LOCAL_RESOLVERSがfalse の場合は必ず指定しなければならない|
 |NGINX_CONFIGURE_FLUENTD|fluentd を組み込む場合 true を指定する|"true"|
 |NGINX_LOG_LEVEL|nginx のログレベルを指定した値に設定する|debug|
+|NGINX_WORKER_PROCESSES|ワーカープロセス数|1|
+|NGINX_WORKER_SHUTDOWN_TIMEOUT|QUITシグナルを受信してからworker を強制終了するまでの猶予時間|20s|
 |LOGDB_HOST|ログDBのホスト名|authz-db|
 |LOGDB_PORT|ログDBのポート番号|27017|
 |LOGDB_USERNAME|ログDBにアクセスするユーザ|fluentd|
@@ -174,3 +176,12 @@ docker stop test
 docker rm test
 ```
 
+## グレースフルシャットダウン
+AWS fargate 環境ではローリングアップデート時にグレースフルシャットダウンを行う必要がある。それぞれのパラメータは以下の通り。
+|プロセス|設定パラメータ|default|仕様URL|
+|--|--|--|--|
+|fargate|タスク定義の stopTimeout|30秒|https://aws.amazon.com/jp/blogs/news/graceful-shutdowns-with-ecs/|
+|supervisord|program:x セクションの stopwaitsecs|10秒|http://supervisord.org/configuration.html#program-x-section-settings|
+|nginx|トップレベルの worker_shutdown_timeout|無限|https://nginx.org/en/docs/ngx_core_module.html#worker_shutdown_timeout|
+
+これらのことから supervisord を 25 秒にし、 nginx を 20秒に設定する。

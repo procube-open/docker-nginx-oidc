@@ -10,18 +10,21 @@ entrypoint_log() {
     fi
 }
 
+export NGINX_WORKER_PROCESSES=${NGINX_WORKER_PROCESSES:-auto}
+export NGINX_WORKER_SHUTDOWN_TIMEOUT=${NGINX_WORKER_SHUTDOWN_TIMEOUT:-20s}
 export NGINX_LOG_LEVEL=${NGINX_LOG_LEVEL:-notice}
 export NGINX_RESOLVER_LINE=""
 if [ -n "${NGINX_LOCAL_RESOLVERS}" ]; then
-    export NGINX_RESOLVER_LINE="resolver ${NGINX_LOCAL_RESOLVERS};"
+    export NGINX_RESOLVER_LINE="resolver ${NGINX_LOCAL_RESOLVERS} ipv6=off;"
 fi
 
 entrypoint_log "$ME: info: put /etc/nginx/nginx.conf."
 
-envsubst '${ME} ${NGINX_LOG_LEVEL} ${NGINX_RESOLVER_LINE}' > /etc/nginx/nginx.conf << 'EOF'
+envsubst '${ME} ${NGINX_LOG_LEVEL} ${NGINX_RESOLVER_LINE} ${NGINX_WORKER_PROCESSES} ${NGINX_WORKER_SHUTDOWN_TIMEOUT}' > /etc/nginx/nginx.conf << 'EOF'
 # This file generated from /docker-entrypoint.d/${ME}
 user  nginx;
-worker_processes  auto;
+worker_processes ${NGINX_WORKER_PROCESSES};
+worker_shutdown_timeout ${NGINX_WORKER_SHUTDOWN_TIMEOUT};
 
 error_log /dev/stdout ${NGINX_LOG_LEVEL};
 pid        /var/run/nginx.pid;
@@ -60,6 +63,9 @@ http {
     gzip_types text/plain application/javascript text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/vnd.ms-fontobject application/x-font-ttf font/opentype;
 
     ${NGINX_RESOLVER_LINE}
+
+    proxy_cache_path /var/cache/nginx keys_zone=zone1:1m max_size=1g inactive=24h;
+    proxy_temp_path  /var/cache/nginx_tmp;
 
     js_path "/etc/nginx/njs/";
     js_import oidc from oidc.js;
