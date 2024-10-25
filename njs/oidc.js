@@ -122,7 +122,8 @@ async function validate_cert(r, pem_cert) {
             r.error(`OIDC validate_cert: the varidator returns error(code = ${reply.status}): ${reply_text}`);
             return ((reply.status >= 300 && reply.status < 400) ? 500 : reply.status)
         }
-        let claims = await reply.json();
+        const reply_json = await reply.json();
+        let claims = reply_json.attributes;
         r.log(`OIDC validate_cert: fetch succeeded: code = ${reply.status}, claims: ${JSON.stringify(claims)}`);
         claims.iat = Math.floor(Date.now() / 1000);
         claims.exp = claims.iat + parseInt(process.env.OIDC_STATIONAY_TOKEN_SPAN);
