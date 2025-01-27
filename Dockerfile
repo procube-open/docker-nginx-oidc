@@ -28,29 +28,29 @@ RUN set -x \
     libxml2-utils \
     lsb-release \
     xsltproc \
-&& ( \
-    cd "$tempDir" \
-    && curl -f -L -o ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION}.zip https://github.com/procube-sandbox/ngx_upstream_jdomain/archive/refs/heads/${UPSTREAM_JDOMAIN_VERSION}.zip \
-    && unzip ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION}.zip \
-    && REVISION="${NGINX_VERSION}-${PKG_RELEASE}" \
-    && REVISION=${REVISION%~*} \
-    && curl -f -L -O https://github.com/nginx/pkg-oss/archive/${REVISION}.tar.gz \
-    && PKGOSSCHECKSUM="5617feecfb441cd972b9ac51a2fd78384a3d2bde2f399163be0746d44ec8f7d8c47234af4f6b0012667c3d0446cced521f55f8f71254415e3766c2e3802bf960 *${REVISION}.tar.gz" \
-    && if [ "$(openssl sha512 -r ${REVISION}.tar.gz)" = "$PKGOSSCHECKSUM" ]; then \
-        echo "pkg-oss tarball checksum verification succeeded!"; \
-    else \
-        echo "pkg-oss tarball checksum verification failed!"; \
-        exit 1; \
-    fi \
-    && tar xzvf ${REVISION}.tar.gz \
-    && cd pkg-oss-${REVISION} \
-    && cd debian \
-    && sed -i 's/BASE_CONFIGURE_ARGS=\\/BASE_CONFIGURE_ARGS=--add-module='$(echo $tempDir | sed 's/\//\\\//g')'\/ngx_upstream_jdomain-'${UPSTREAM_JDOMAIN_VERSION}' \\/' Makefile \
-    && make rules-base \
-    && mk-build-deps --install --tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes" \
-            debuild-base/nginx-$NGINX_VERSION/debian/control \
-    && make base \
-) \
+# && ( \
+#     cd "$tempDir" \
+#     && curl -f -L -o ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION}.zip https://github.com/procube-sandbox/ngx_upstream_jdomain/archive/refs/heads/${UPSTREAM_JDOMAIN_VERSION}.zip \
+#     && unzip ngx_upstream_jdomain-${UPSTREAM_JDOMAIN_VERSION}.zip \
+#     && REVISION="${NGINX_VERSION}-${PKG_RELEASE}" \
+#     && REVISION=${REVISION%~*} \
+#     && curl -f -L -O https://github.com/nginx/pkg-oss/archive/${REVISION}.tar.gz \
+#     && PKGOSSCHECKSUM="5617feecfb441cd972b9ac51a2fd78384a3d2bde2f399163be0746d44ec8f7d8c47234af4f6b0012667c3d0446cced521f55f8f71254415e3766c2e3802bf960 *${REVISION}.tar.gz" \
+#     && if [ "$(openssl sha512 -r ${REVISION}.tar.gz)" = "$PKGOSSCHECKSUM" ]; then \
+#         echo "pkg-oss tarball checksum verification succeeded!"; \
+#     else \
+#         echo "pkg-oss tarball checksum verification failed!"; \
+#         exit 1; \
+#     fi \
+#     && tar xzvf ${REVISION}.tar.gz \
+#     && cd pkg-oss-${REVISION} \
+#     && cd debian \
+#     && sed -i 's/BASE_CONFIGURE_ARGS=\\/BASE_CONFIGURE_ARGS=--add-module='$(echo $tempDir | sed 's/\//\\\//g')'\/ngx_upstream_jdomain-'${UPSTREAM_JDOMAIN_VERSION}' \\/' Makefile \
+#     && make rules-base \
+#     && mk-build-deps --install --tool="apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes" \
+#             debuild-base/nginx-$NGINX_VERSION/debian/control \
+#     && make base \
+# ) \
 # we don't remove APT lists here because they get re-downloaded and removed later
 \
 # reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
