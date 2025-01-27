@@ -61,7 +61,7 @@ RUN set -x \
 # create a temporary local APT repo to install from (so that dependency resolution can be handled by APT, as it should be)
 && ls -lAFh "$tempDir" \
 && ( cd "$tempDir" && dpkg-scanpackages . > Packages ) \
-&& grep '^Package: ' "$tempDir/Packages" \
+# && grep '^Package: ' "$tempDir/Packages" \
 && echo "deb [ trusted=yes ] file://$tempDir ./" > /etc/apt/sources.list.d/temp.list \
 # work around the following APT issue by using "Acquire::GzipIndexes=false" (overriding "/etc/apt/apt.conf.d/docker-gzip-indexes")
 #   Could not open file /var/lib/apt/lists/partial/_tmp_tmp.ODWljpQfkE_._Packages - open (13: Permission denied)
