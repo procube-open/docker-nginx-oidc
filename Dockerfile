@@ -1,4 +1,4 @@
-FROM nginx:1.25
+FROM nginx:1.27.3
 
 # Build nginx code copied from official nginx Dockerfile
 # https://github.com/nginxinc/docker-nginx/blob/master/stable/debian/Dockerfile
