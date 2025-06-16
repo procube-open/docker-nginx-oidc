@@ -28,6 +28,7 @@ https://qiita.com/ydclab_P002/items/b49ed23ca7b2532fcce2 を参考にKeycloak �
 |NGINX_CONFIGURE_FLUENTD|fluentd を組み込む場合 true を指定する|"true"|
 |NGINX_LOG_LEVEL|nginx のログレベルを指定した値に設定する|debug|
 |NGINX_WORKER_PROCESSES|ワーカープロセス数|1|
+|NGINX_WORKER_CONNECTIONS|1つのワーカープロセスの最大接続数|1024|
 |NGINX_WORKER_SHUTDOWN_TIMEOUT|QUITシグナルを受信してからworker を強制終了するまでの猶予時間|20s|
 |LOGDB_HOST|ログDBのホスト名|authz-db|
 |LOGDB_PORT|ログDBのポート番号|27017|
