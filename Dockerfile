@@ -1,4 +1,4 @@
-FROM nginx:1.27.3
+FROM nginx:1.29.2
 
 RUN apt update && apt install -y supervisor cron logrotate
 
