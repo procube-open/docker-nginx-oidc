@@ -49,23 +49,22 @@
 
 **ワークフロー**: `release-prerelease.yml`
 
-## 認証
+## ⚠️ 注意
 
-GitHub Actions ワークフローは以下のシークレットを使用して GitHub Apps トークンを生成し、自動でコミットやタグを作成できるようにしています。
+### プルリクエストからのマージ時の指定方法
 
-| シークレット | 説明 |
-|--|--|
-| `APP_ID` | GitHub App の ID |
-| `PRIVATE_KEY` | GitHub App の秘密鍵 |
-| `DOCKER_USERNAME` | Docker Hub のユーザ名 |
-| `DOCKER_PASSWORD` | Docker Hub のパスワード（Personal Access Token 推奨） |
+`main` ブランチへのプルリクエストをマージする際にバージョン更新タイプを指定する場合は、**プルリクエストのタイトルに以下の文字列を含めてください**：
 
-## 変数
+- `[[MINOR]]`：マイナーバージョン更新
+- `[[MAJOR]]`：メジャーバージョン更新
 
-| 変数 | 説明 |
-|--|--|
-| `BUILDER_GITHUB_USER` | コミット時に使用する Git ユーザ名 |
-| `BUILDER_GITHUB_EMAIL` | コミット時に使用する Git メールアドレス |
+例）PR タイトル：`[[MINOR]] Add new feature for OIDC`
+
+### フィーチャーブランチでのプリリリース版生成
+
+`main` と `stable-*` 以外のブランチでプリリリース版（RC 版）を生成する場合は、**プルリクエストのタイトルに `[[PRERELEASE]]` を含める必要があります**。この文字列がない場合、バージョニングワークフローはスキップされます。
+
+例）PR タイトル：`[[PRERELEASE]] Test new authentication flow`
 
 ## 使用しているツール
 
